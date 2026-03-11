@@ -1,6 +1,5 @@
 package org.example.smart_clinic_appointment_queue_optimization_system.util;
 
-import org.springframework.stereotype.Component;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -13,7 +12,6 @@ import java.util.Map;
 
 @Component
 public class JwtUtil {
-
     @Value("${jwt.expiration}")
     private long expiration;
 
@@ -21,7 +19,6 @@ public class JwtUtil {
     private String secretKey;
 
     public String generateToken(Map<String, Object> claims, String subject) {
-
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(subject)
@@ -31,29 +28,27 @@ public class JwtUtil {
                 .compact();
     }
 
-    public String generateToken(String subject,String role ) {
+    public String generateToken(String username, String role) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role",role);
-        return generateToken(claims,subject);
+        claims.put("role", role);
+        return generateToken(claims, username);
     }
-
-    public String extractUsername(String token) {
+    public String extractUsername(String token){
         return Jwts.parserBuilder()
                 .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
                 .build()
-                .parseClaimsJwt(token)
+                .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
     }
-    public boolean validateToken(String token) {
+    public boolean validateToken(String token){
         try {
             Jwts.parserBuilder()
                     .setSigningKey(Keys.hmacShaKeyFor(secretKey.getBytes()))
                     .build()
                     .parseClaimsJws(token);
-
             return true;
-        }catch (Exception e) {
+        }catch (Exception e){
             return false;
         }
     }
