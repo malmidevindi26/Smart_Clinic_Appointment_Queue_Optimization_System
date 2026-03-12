@@ -9,6 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @AllArgsConstructor
@@ -30,7 +31,7 @@ public class Schedule {
     @JoinColumn(name = "doctor_id")
     private Doctor doctor;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "schedule")
     private List<Appointment> appointments;
-
 }

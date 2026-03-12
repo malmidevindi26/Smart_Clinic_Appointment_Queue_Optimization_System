@@ -2,6 +2,7 @@ package org.example.smart_clinic_appointment_queue_optimization_system.controlle
 
 import lombok.RequiredArgsConstructor;
 import org.example.smart_clinic_appointment_queue_optimization_system.dto.AppointmentRequestDto;
+import org.example.smart_clinic_appointment_queue_optimization_system.dto.AppointmentResponseDto;
 import org.example.smart_clinic_appointment_queue_optimization_system.entity.Appointment;
 import org.example.smart_clinic_appointment_queue_optimization_system.service.AppointmentService;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -17,12 +18,7 @@ public class AppointmentController {
     private final AppointmentService appointmentService;
 
     @PostMapping("/book")
-    public Appointment bookAppointment(@RequestBody AppointmentRequestDto dto) {
-
-        return appointmentService.bookAppointment(
-                dto.getDoctorId(),
-                dto.getPatientId(),
-                dto.getScheduleId()
-        );
+    public AppointmentResponseDto bookAppointment(@RequestBody AppointmentRequestDto request){
+        return appointmentService.bookAppointment(request);
     }
 }
