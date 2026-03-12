@@ -20,8 +20,10 @@ public class Payment {
     private Long id;
 
     private double amount;
-    private String paymentStatus;
+    //private String paymentStatus;
     private LocalDate paymentDate;
+    private String paymentType;
+    private String paymentStatus;
 
     @OneToOne
     @JoinColumn(name = "appointment_id")

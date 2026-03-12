@@ -26,6 +26,7 @@ public class Appointment {
     private int queueNumber;
 
     private String status;
+    private boolean isPriority;
 
     @ManyToOne
     @JoinColumn(name = "doctor_id")

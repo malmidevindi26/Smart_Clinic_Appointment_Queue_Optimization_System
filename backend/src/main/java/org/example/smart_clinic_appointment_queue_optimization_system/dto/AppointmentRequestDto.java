@@ -8,4 +8,6 @@ public class AppointmentRequestDto {
     private Long doctorId;
     private Long patientId;
     private Long scheduleId;
+    private boolean isEmergency;
+    private String paymentMethod;
 }

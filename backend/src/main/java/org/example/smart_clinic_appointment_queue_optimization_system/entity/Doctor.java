@@ -23,7 +23,7 @@ public class Doctor {
     private String specialization;
     private String phone;
     private String email;
-    private String dailyPatientLimit;
+    private int dailyPatientLimit;
 
     @JsonIgnore
     @OneToMany(mappedBy = "doctor")

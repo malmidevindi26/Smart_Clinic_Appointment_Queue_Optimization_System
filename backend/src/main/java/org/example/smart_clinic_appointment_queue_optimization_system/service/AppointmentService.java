@@ -24,46 +24,50 @@ public class AppointmentService {
    private final PatientRepository patientRepository;
    private final AppointmentRepository appointmentRepository;
    private final ScheduleRepository scheduleRepository;
+   private final PaymentService paymentService; // Ensure this is injected
 
    @Transactional
    public AppointmentResponseDto bookAppointment(AppointmentRequestDto request) {
 
       Doctor doctor = doctorRepository.findById(request.getDoctorId())
-              .orElseThrow(() -> new IllegalArgumentException("doctor not found"));
+              .orElseThrow(() -> new IllegalArgumentException("Doctor not found"));
 
       Patient patient = patientRepository.findById(request.getPatientId())
-              .orElseThrow(() -> new IllegalArgumentException("patient not found"));
+              .orElseThrow(() -> new IllegalArgumentException("Patient not found"));
 
       Schedule schedule = scheduleRepository.findById(request.getScheduleId())
-              .orElseThrow(() -> new IllegalArgumentException("schedule not found"));
+              .orElseThrow(() -> new IllegalArgumentException("Schedule not found"));
 
-      int currentAppointments =
-              appointmentRepository.countByDoctorAndSchedule(doctor, schedule);
+      int currentAppointments = appointmentRepository.countByDoctorAndSchedule(doctor, schedule);
 
-      int queueNumber = currentAppointments + 1;
-
-      if (queueNumber > schedule.getMaxSlots()) {
+      if (currentAppointments >= schedule.getMaxSlots()) {
          throw new RuntimeException("No available slots for this schedule");
       }
+
+      int queueNumber = currentAppointments + 1;
 
       Appointment appointment = Appointment.builder()
               .doctor(doctor)
               .patient(patient)
               .schedule(schedule)
-              .appointmentDate(LocalDate.now())
+              .appointmentDate(schedule.getDate())
               .queueNumber(queueNumber)
               .status("BOOKED")
+              .isPriority(request.isEmergency())
               .build();
 
-      appointmentRepository.save(appointment);
+      Appointment savedAppointment = appointmentRepository.save(appointment);
+
+      double doctorFee = 2500.0;
+      paymentService.processAppointmentPayment(savedAppointment, doctorFee, request.getPaymentMethod());
 
       return new AppointmentResponseDto(
-              appointment.getId(),
+              savedAppointment.getId(),
               doctor.getName(),
               patient.getName(),
               queueNumber,
-              appointment.getAppointmentDate(),
-              appointment.getStatus()
+              savedAppointment.getAppointmentDate(),
+              savedAppointment.getStatus()
       );
    }
 }
