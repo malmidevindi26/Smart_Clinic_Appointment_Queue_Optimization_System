@@ -4,14 +4,12 @@ import lombok.RequiredArgsConstructor;
 import org.example.smart_clinic_appointment_queue_optimization_system.dto.ApiResponse;
 import org.example.smart_clinic_appointment_queue_optimization_system.service.AnalyticsService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/v1/analytics")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class AnalyticsController {
     private final AnalyticsService analyticsService; // Inject Service instead of Repo
 

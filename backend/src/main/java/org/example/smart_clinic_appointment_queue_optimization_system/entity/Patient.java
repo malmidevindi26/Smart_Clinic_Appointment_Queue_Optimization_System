@@ -22,6 +22,10 @@ public class Patient {
     private String phone;
     private String email;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    private User user;
+
     @OneToMany(mappedBy = "patient")
     private List<Appointment> appointments;
 }

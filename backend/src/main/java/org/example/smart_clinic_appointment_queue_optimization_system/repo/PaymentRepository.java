@@ -12,11 +12,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.paymentStatus = 'PAID'")
     Double calculateTotalRevenue();
 
-    // Doctor-wise income statistics
+    // Doctor-wise income
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.appointment.doctor.id = :doctorId AND p.paymentStatus = 'PAID'")
     Double calculateRevenueByDoctor(@Param("doctorId") Long doctorId);
 
-    // Daily income statistics
+    // Daily income
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.paymentDate = :date AND p.paymentStatus = 'PAID'")
     Double calculateDailyRevenue(@Param("date") LocalDate date);
 }

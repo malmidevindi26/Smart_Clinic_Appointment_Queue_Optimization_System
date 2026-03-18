@@ -11,15 +11,15 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
-@CrossOrigin
+@CrossOrigin(origins = "*")
 public class AuthController {
 
     private final UserService userService;
 
-    @PostMapping("/register")
+    @PostMapping("/register-patient")
     public ResponseEntity<ApiResponse> register(@RequestBody RegisterDto dto){
         return ResponseEntity.ok(
-                new ApiResponse(200, "Success", userService.register(dto))
+                new ApiResponse(200, "Success", userService.registerPatient(dto))
         );
     }
 

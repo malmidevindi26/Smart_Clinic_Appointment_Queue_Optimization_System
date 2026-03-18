@@ -8,11 +8,16 @@ import lombok.NoArgsConstructor;
 
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
+
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 @Builder
+@SQLDelete(sql = "UPDATE doctor SET is_active = false WHERE id = ?")
+@SQLRestriction("is_active = true")
 public class Doctor {
 
     @Id
@@ -25,6 +30,11 @@ public class Doctor {
     private String email;
     private int dailyPatientLimit;
 
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", referencedColumnName = "id")
+    @JsonIgnore
+    private User user;
+
     @JsonIgnore
     @OneToMany(mappedBy = "doctor")
     private List<Schedule> schedules;
@@ -32,4 +42,7 @@ public class Doctor {
     @JsonIgnore
     @OneToMany(mappedBy = "doctor")
     private List<Appointment> appointments;
+
+    @Builder.Default
+    private boolean isActive = true;
 }
