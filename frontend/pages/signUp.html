@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Sign Up</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+            margin: 0; 
+            background-color: #f0f2f5; 
+            padding: 20px;
+        }
+        .signup-card { 
+            border: 1px solid #ddd; 
+            padding: 30px; 
+            border-radius: 12px; 
+            width: 400px; 
+            background: white; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1); 
+        }
+        h2 { text-align: center; color: #333; margin-bottom: 20px; }
+        .section-label { 
+            font-size: 12px; 
+            text-transform: uppercase; 
+            color: #4e73df; 
+            font-weight: bold; 
+            margin-bottom: 10px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        input { 
+            width: 100%; 
+            margin-bottom: 15px; 
+            padding: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+        }
+        input:focus { border-color: #1cc88a; outline: none; }
+        button { 
+            width: 100%; 
+            padding: 14px; 
+            background: #1cc88a; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover { background: #17a673; }
+        .link { text-align: center; margin-top: 20px; font-size: 14px; color: #666; }
+        a { color: #4e73df; text-decoration: none; font-weight: bold; }
+        
+        /* Two column layout for small inputs */
+        .row { display: flex; gap: 10px; }
+        .row input { flex: 1; }
+    </style>
+</head>
+<body>
+    <div class="signup-card">
+        <h2>Create Patient Account</h2>
+
+        <div class="section-label">Login Credentials</div>
+        <input type="text" id="username" placeholder="Username">
+        <input type="password" id="password" placeholder="Password">
+
+        <div class="section-label">Personal Infornmation</div>
+        <input type="text" id="name" placeholder="Full Name">
+        <input type="email" id="email" placeholder="Email Address">
+
+        <div class="row">
+            <input type="text" id="phone" placeholder="Phone Number">
+            <input type="number" id="age" placeholder="Age">
+        </div>
+
+        <button onclick="signup()">Register Now</button>
+
+        <div class="link">
+            Already have an account? <a href="signIn.html">SignIn</a>
+        </div>
+    </div>
+
+    <script>
+        function signup(){
+            const signupData = {
+              username: $('#username').val().trim(),
+              password: $('#password').val(),
+              name: $('#name').val().trim(),
+              email: $('#email').val().trim(),
+              phone: $('#phone').val().trim(),
+              age: parseInt($('#age').val())
+            };
+
+            // if(!signupData.username || !signupData.password || signupData.name){
+            //     alert("Please fill in all required fields.");
+            //     return
+            // }
+            if(isNaN(signupData.age) || signupData.age <= 0){
+                alert("Please enter a valid age")
+                return
+            }
+            $.ajax({
+                url: 'http://localhost:8080/api/v1/auth/register-patient',
+                method: 'POST',
+                contentType:'application/json',
+                data: JSON.stringify(signupData),
+                success: function(response){
+                   // alert(response)
+                   alert("Registration successfully")
+                    window.location.href = 'signIn.html';
+                },
+                error: function(err){
+                    console.error(err);
+                   alert("REgistration Failed: " + (err.responseText || "Check backend connection"));
+
+                }
+            });
+        }
+
+        $(document).keypress(function(e){
+            if(e.which == 13) signup();
+        });
+    </script>
+</body>
+</html>

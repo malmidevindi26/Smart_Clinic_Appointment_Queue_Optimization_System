@@ -1,5 +1,6 @@
 package org.example.smart_clinic_appointment_queue_optimization_system.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -29,4 +30,9 @@ public class User {
     private Role role;
 
     private LocalDateTime createdAt;
+    @OneToOne(mappedBy = "user")
+    private Patient patient;
+
+    @OneToOne(mappedBy = "user")
+    private Doctor doctor;
 }

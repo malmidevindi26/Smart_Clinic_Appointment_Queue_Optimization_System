@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Clinic - Sign In</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+            background-color: #f0f2f5; 
+        }
+        .login-card { 
+            border: 1px solid #ddd; 
+            padding: 40px; 
+            border-radius: 12px; 
+            width: 380px; 
+            background: white; 
+            box-shadow: 0 8px 24px rgba(0,0,0,0.1); 
+        }
+        h2 { text-align: center; color: #333; margin-bottom: 30px; }
+        label { display: block; margin-bottom: 5px; color: #666; font-size: 14px; }
+        input { 
+            width: 100%; 
+            margin-bottom: 20px; 
+            padding: 12px; 
+            border: 1px solid #ccc; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+            transition: border-color 0.3s;
+        }
+        input:focus { border-color: #4e73df; outline: none; }
+        button { 
+            width: 100%; 
+            padding: 14px; 
+            background: #4e73df; 
+            color: white; 
+            border: none; 
+            border-radius: 6px; 
+            cursor: pointer; 
+            font-size: 16px; 
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        button:hover { background: #224abe; }
+        .link { text-align: center; margin-top: 20px; font-size: 14px; color: #666; }
+        a { color: #4e73df; text-decoration: none; font-weight: bold; }
+        a:hover { text-decoration: underline; }
+        .error-msg { color: #e74a3b; font-size: 13px; text-align: center; margin-bottom: 15px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>Smart Clinic Login</h2>
+        <div id="errorBox" class="error-msg">Invalid username or password.</div>
+        
+        <label for="username">Username</label>
+        <input type="text" id="username" placeholder="Enter your username">
+
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="Enter your passord">
+
+        <button onclick="login()">Sign In</button>
+
+        <div class="link">
+            Don't have a patient account? <a href="signUp.html">Sign Up</a>
+        </div>
+    </div>
+
+    <script>
+        function login(){
+            $('#errorBox').hide();
+
+            const loginData = {
+                username: $('#username').val(),
+                password: $('#password').val()
+            };
+
+            if(!loginData.username || !loginData.password){
+                alert("Please fill in all fields.");
+                return
+            }
+
+            $.ajax({
+                url: 'http://localhost:8080/api/v1/auth/login',
+                method:'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(loginData),
+                success: function(response){
+
+                    const authData = response.data;
+                    localStorage.setItem('token', authData.accessToken);
+                    localStorage.setItem('role', authData.role);
+                    localStorage.setItem('profileId', authData.profileId);
+                    localStorage.setItem('username', loginData.username);
+
+                    console.log("Login Success. Role: " + authData.role);
+
+                    if(authData.role === 'ADMIN'){
+                        window.location.href = 'admin-dashboard.html';
+                    }else if (authData.role === 'DOCTOR'){
+                        window.location.href = 'doctor-dashboard.html';
+                    }else if(authData.role === 'PATIENT'){
+                        window.location.href = 'patient-dashboard.html';
+                    }else{
+                        alert("Unknown role assigned to user.")
+                    }
+                },
+                error: function(err){
+                    console.error(err);
+                    $('#errorBox').fadeIn();
+                }
+            });
+        }
+
+        $(document).keypress(function(e){
+            if(e.which == 13){
+                login();
+            }
+        });
+    </script>
+</body>
+</html>

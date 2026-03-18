@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -24,7 +25,7 @@ public class AppointmentService {
    private final PatientRepository patientRepository;
    private final AppointmentRepository appointmentRepository;
    private final ScheduleRepository scheduleRepository;
-   private final PaymentService paymentService; // Ensure this is injected
+   private final PaymentService paymentService;
 
    @Transactional
    public AppointmentResponseDto bookAppointment(AppointmentRequestDto request) {
@@ -38,20 +39,44 @@ public class AppointmentService {
       Schedule schedule = scheduleRepository.findById(request.getScheduleId())
               .orElseThrow(() -> new IllegalArgumentException("Schedule not found"));
 
-      int currentAppointments = appointmentRepository.countByDoctorAndSchedule(doctor, schedule);
+//      int currentAppointments = appointmentRepository.countByDoctorAndSchedule(doctor, schedule);
+//
+//      if (currentAppointments >= schedule.getMaxSlots()) {
+//         throw new RuntimeException("No available slots for this schedule");
+//      }
 
-      if (currentAppointments >= schedule.getMaxSlots()) {
-         throw new RuntimeException("No available slots for this schedule");
+      //int queueNumber = currentAppointments + 1;
+//      int currentActiveCount = appointmentRepository.countActiveAppointments(doctor, schedule);
+//
+//      if (currentActiveCount >= schedule.getMaxSlots()) {
+//         throw new RuntimeException("No available slots. Capacity reached.");
+//      }
+//      int nextQueueNumber = currentActiveCount + 1;
+
+      boolean alreadyBooked = appointmentRepository.existsByPatientIdAndScheduleIdAndStatus(
+              request.getPatientId(),
+              request.getScheduleId(),
+              "BOOKED"
+      );
+      if (alreadyBooked) {
+         throw new RuntimeException(" You already have an active appointment for this time slot.");
       }
 
-      int queueNumber = currentAppointments + 1;
+      int activeAppointments = appointmentRepository.countActiveAppointments(doctor, schedule);
+
+      if (activeAppointments >= schedule.getMaxSlots()) {
+         throw new RuntimeException("Maximum patient limit (" + schedule.getMaxSlots() + ") reached for this schedule.");
+      }
+
+      // Assign the next available queue number
+      int nextQueueNumber = activeAppointments + 1;
 
       Appointment appointment = Appointment.builder()
               .doctor(doctor)
               .patient(patient)
               .schedule(schedule)
               .appointmentDate(schedule.getDate())
-              .queueNumber(queueNumber)
+              .queueNumber(nextQueueNumber)
               .status("BOOKED")
               .isPriority(request.isEmergency())
               .build();
@@ -65,9 +90,120 @@ public class AppointmentService {
               savedAppointment.getId(),
               doctor.getName(),
               patient.getName(),
-              queueNumber,
+              nextQueueNumber,
               savedAppointment.getAppointmentDate(),
               savedAppointment.getStatus()
       );
+   }
+   @Transactional
+   public String cancelAppointment(Long appointmentId) {
+      Appointment appointment = appointmentRepository.findById(appointmentId)
+              .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+      if(!"BOOKED".equals(appointment.getStatus())) {
+         throw new RuntimeException("Only active bookings can be cancelled.");
+      }
+      appointment.setStatus("CANCELLED");
+      appointmentRepository.save(appointment);
+      return "Appointment #" + appointmentId + " cancelled. Slot is now reallocated.";
+   }
+
+   @Transactional
+   public String completeAppointment(Long appointmentId) {
+      Appointment appointment = appointmentRepository.findById(appointmentId)
+              .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+      if(!"BOOKED".equals(appointment.getStatus())) {
+         throw new RuntimeException("Only active bookings can be marked as completed. Current status: " + appointment.getStatus());
+      }
+         appointment.setStatus("COMPLETED");
+         appointmentRepository.save(appointment);
+         return "Appointment #" + appointmentId + " marked as COMPLETED. Patient visit history updated.";
+      }
+
+      public List<AppointmentResponseDto> getDoctorDailySchedule(Long doctorId) {
+          Doctor doctor = doctorRepository.findById(doctorId)
+                  .orElseThrow(() -> new IllegalArgumentException("Doctor not found"));
+
+          LocalDate today = LocalDate.now();
+
+          List<Appointment> dailyAppointment = appointmentRepository.findAllByDoctorAndAppointmentDateAndStatusOrderByQueueNumberAsc(doctor, today, "BOOKED");
+
+          return dailyAppointment.stream().map(app -> new AppointmentResponseDto(
+                  app.getId(),
+                  app.getDoctor().getName(),
+                  app.getPatient().getName(),
+                  app.getQueueNumber(),
+                  app.getAppointmentDate(),
+                  app.getStatus()
+          )).toList();
+      }
+
+      public List<AppointmentResponseDto> getPatientHistory(Long patientId) {
+          List<Appointment> history = appointmentRepository
+                  .findAllByPatientIdAndStatusOrderByAppointmentDateDesc(patientId, "COMPLETED");
+
+          return history.stream().map(app -> new AppointmentResponseDto(
+                  app.getId(),
+                  app.getDoctor().getName(),
+                  app.getPatient().getName(),
+                  app.getQueueNumber(),
+                  app.getAppointmentDate(),
+                  app.getStatus()
+          )).toList();
+   }
+
+   public List<AppointmentResponseDto> getDoctorDashboard(Long doctorId) {
+      LocalDate today = LocalDate.now();
+
+      return appointmentRepository.findAllByDoctorIdAndAppointmentDateAndStatusOrderByQueueNumberAsc(
+              doctorId,
+              today,
+              "BOOKED"
+      ).stream().map(app -> new AppointmentResponseDto(
+              app.getId(),
+              app.getDoctor().getName(),
+              app.getPatient().getName(),
+              app.getQueueNumber(),
+              app.getAppointmentDate(),
+              app.getStatus()
+      )).toList();
+   }
+
+   public List<AppointmentResponseDto> getUpcomingAppointments(Long doctorId) {
+      Doctor doctor = doctorRepository.findById(doctorId)
+              .orElseThrow(() -> new RuntimeException("Doctor not found"));
+
+      LocalDate today = LocalDate.now();
+
+      return appointmentRepository.findAllByDoctorAndAppointmentDateGreaterThanEqualAndStatusOrderByAppointmentDateAscQueueNumberAsc(
+              doctor,
+              today,
+              "BOOKED"
+      ).stream().map(app -> new AppointmentResponseDto(
+              app.getId(),
+              app.getDoctor().getName(),
+              app.getPatient().getName(),
+              app.getQueueNumber(),
+              app.getAppointmentDate(),
+              app.getStatus()
+      )).toList();
+   }
+
+   public List<AppointmentResponseDto> getPatientUpcomingAppointments(Long patientId) {
+      LocalDate today = LocalDate.now();
+
+      return appointmentRepository.findAllByPatientIdAndAppointmentDateGreaterThanEqualAndStatusOrderByAppointmentDateAsc(
+              patientId,
+              today,
+              "BOOKED"
+      ).stream().map(app -> new AppointmentResponseDto(
+              app.getId(),
+              app.getDoctor().getName(),
+              app.getPatient().getName(),
+              app.getQueueNumber(),
+              app.getAppointmentDate(),
+              app.getStatus()
+      )).toList();
    }
 }

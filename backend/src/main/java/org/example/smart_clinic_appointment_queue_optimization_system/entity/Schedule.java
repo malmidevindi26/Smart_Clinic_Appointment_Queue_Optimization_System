@@ -1,5 +1,6 @@
 package org.example.smart_clinic_appointment_queue_optimization_system.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -10,13 +11,16 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.hibernate.annotations.SQLDelete;
+import org.hibernate.annotations.SQLRestriction;
 
 @Entity
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 @Builder
-public class Schedule {
+@SQLDelete(sql = "UPDATE schedule SET is_active = false WHERE id = ?")
+@SQLRestriction("is_active = true")public class Schedule {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,4 +38,9 @@ public class Schedule {
     @JsonIgnore
     @OneToMany(mappedBy = "schedule")
     private List<Appointment> appointments;
+
+    @Builder.Default
+    @JsonProperty("isActive")
+    private boolean  isActive = true;
+
 }
