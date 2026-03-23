@@ -33,6 +33,7 @@ import org.hibernate.annotations.SQLRestriction;
 
     @ManyToOne
     @JoinColumn(name = "doctor_id")
+    @JsonIgnore
     private Doctor doctor;
 
     @JsonIgnore
@@ -40,7 +41,7 @@ import org.hibernate.annotations.SQLRestriction;
     private List<Appointment> appointments;
 
     @Builder.Default
-    @JsonProperty("isActive")
+    @JsonProperty("active")
     private boolean  isActive = true;
 
 }

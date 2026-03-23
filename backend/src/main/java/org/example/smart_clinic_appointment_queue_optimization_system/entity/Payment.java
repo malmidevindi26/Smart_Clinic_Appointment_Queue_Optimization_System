@@ -24,6 +24,7 @@ public class Payment {
     private LocalDate paymentDate;
     private String paymentType;
     private String paymentStatus;
+    private String transactionId;
 
     @OneToOne
     @JoinColumn(name = "appointment_id")

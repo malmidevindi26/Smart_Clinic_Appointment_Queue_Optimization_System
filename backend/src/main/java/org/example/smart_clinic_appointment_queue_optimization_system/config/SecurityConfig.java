@@ -35,9 +35,32 @@ public class SecurityConfig {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/v1/auth/register-patient", "/api/v1/auth/login").permitAll() // Public
-                        .requestMatchers("/api/v1/admin/add-doctor").hasRole("ADMIN") // Restricted
-                        .anyRequest().authenticated()
+//                        .requestMatchers("/api/v1/auth/register-patient", "/api/v1/auth/login").permitAll() // Public
+//                        .requestMatchers("/api/v1/admin/add-doctor").hasRole("ADMIN") // Restricted
+//                        .anyRequest().authenticated()
+                                .requestMatchers("/api/v1/auth/**").permitAll()
+
+                                // 1. Allow PATIENTS to see schedules so they can book!
+                                // This was the main cause of your 403 error in openBooking()
+                                .requestMatchers("/api/v1/admin/schedules").hasAnyRole("ADMIN", "PATIENT")
+
+                                // 2. Allow PATIENTS to search and see doctors
+                                .requestMatchers("/api/v1/doctors/all", "/api/v1/doctors/search").hasAnyRole("ADMIN", "DOCTOR", "PATIENT")
+
+                                // 3. APPOINTMENTS - Specific Patient access MUST come before the general /** rule
+                                .requestMatchers("/api/v1/appointments/book").hasRole("PATIENT")
+                                .requestMatchers("/api/v1/appointments/patient-history/**").hasRole("PATIENT")
+                                .requestMatchers("/api/v1/appointments/patient/cancel/**").hasRole("PATIENT")
+
+                                // 4. General Appointment access for staff
+                                .requestMatchers("/api/v1/appointments/**").hasAnyRole("ADMIN", "DOCTOR")
+
+                                // 5. Patient profile access
+                                .requestMatchers("/api/v1/patients/**").hasRole("PATIENT")
+
+                                // 6. Restrict other admin routes
+                                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                                .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authenticationProvider(authenticationProvider())

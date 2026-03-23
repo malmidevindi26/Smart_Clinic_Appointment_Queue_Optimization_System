@@ -84,7 +84,7 @@ public class AppointmentService {
       Appointment savedAppointment = appointmentRepository.save(appointment);
 
       double doctorFee = 2500.0;
-      paymentService.processAppointmentPayment(savedAppointment, doctorFee, request.getPaymentMethod());
+      paymentService.processAppointmentPayment(savedAppointment, doctorFee, request.getPaymentMethod(), request.getTransactionId());
 
       return new AppointmentResponseDto(
               savedAppointment.getId(),
@@ -96,12 +96,16 @@ public class AppointmentService {
       );
    }
    @Transactional
-   public String cancelAppointment(Long appointmentId) {
+   public String patientCancelAppointment(Long appointmentId, Long patientId) {
       Appointment appointment = appointmentRepository.findById(appointmentId)
               .orElseThrow(() -> new RuntimeException("Appointment not found"));
 
+      if (!appointment.getPatient().getId().equals(patientId)) {
+         throw new RuntimeException("Unauthorized: You can only cancel your own appointments.");
+      }
+
       if(!"BOOKED".equals(appointment.getStatus())) {
-         throw new RuntimeException("Only active bookings can be cancelled.");
+         throw new RuntimeException("This appointment is already" + appointment.getStatus());
       }
       appointment.setStatus("CANCELLED");
       appointmentRepository.save(appointment);

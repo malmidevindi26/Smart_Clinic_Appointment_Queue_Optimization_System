@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Dashboard</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        :root { --primary: #4e73df; --success: #1cc88a; --info: #36b9cc; --danger: #e74a3b; --secondary: #858796; --bg: #f8f9fc; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: var(--bg); margin: 0; display: flex; }
+        
+        /* Sidebar */
+        .sidebar { width: 250px; background: var(--primary); color: white; min-height: 100vh; position: fixed; box-shadow: 2px 0 5px rgba(0,0,0,0.1); }
+        .sidebar-brand { padding: 25px; text-align: center; font-size: 20px; font-weight: bold; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .nav-item { padding: 15px 25px; cursor: pointer; transition: 0.3s; display: block; color: white; text-decoration: none; }
+        .nav-item:hover { background: rgba(255,255,255,0.1); }
+        .nav-active { background: rgba(0,0,0,0.15); border-left: 4px solid var(--success); }
+
+        /* Main Content */
+        .main { margin-left: 250px; flex: 1; padding: 30px; }
+        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; }
+        
+        /* Sections */
+        .section { display: none; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .active-section { display: block; }
+
+        /* Doctor Cards */
+        .doctor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 20px; }
+        .doc-card { background: white; border: 1px solid #e3e6f0; padding: 25px; border-radius: 12px; text-align: center; transition: 0.3s; }
+        .doc-card:hover { transform: translateY(-5px); box-shadow: 0 10px 15px rgba(0,0,0,0.1); }
+        .doc-card h3 { margin: 10px 0 5px 0; color: #333; }
+        .doc-spec { color: var(--primary); font-weight: bold; margin-bottom: 15px; }
+
+        /* Tables */
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th { text-align: left; padding: 15px; border-bottom: 2px solid #e3e6f0; color: var(--primary); }
+        td { padding: 15px; border-bottom: 1px solid #e3e6f0; font-size: 14px; }
+        .badge { padding: 5px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .status-booked { background: #fff3cd; color: #856404; }
+
+        /* Modal */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); }
+        .modal-content { background: white; margin: 5% auto; padding: 30px; border-radius: 15px; width: 400px; position: relative; }
+        .close { position: absolute; right: 20px; top: 15px; cursor: pointer; font-size: 24px; }
+
+        /* Forms */
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 10px; transition: 0.3s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: var(--success); color: white; }
+        .btn-danger { background: var(--danger); color: white; }
+        input, select { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+    </style>
+</head>
+<body>
+    <div class="sidebar">
+        <div class="sidebar-brand">Smart Clinic</div>
+        <a href="#searchSection" class="nav-item nav-active" onclick="showSection('searchSection')">Find a Doctor</a>
+        <a href="#upcomingSection" class="nav-item" onclick="showSection('upcomingSection'); loadUpcoming();">My Appointment</a>
+        <a href="#historySection" class="nav-item" onclick="showSection('historySection'); loadHistory();">Medical History</a>
+        <div class="nav-item" onclick="logout()" style="margin-top: 50px; color: #ffbbbb;" >Logout</div>
+    </div>
+
+    <div class="main">
+        <div class="header">
+            <h2 id="welcomeText">Welcome to Patient Portal</h2>
+            <div id="patientName" style="color: var(--secondary);">Patient ID: --</div>
+        </div>
+
+        <div id="searchSection" class="section active-section">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="specSearch" placeholder="Search by Specialization (e.g. Dental, ENT)...">
+                <button class="btn btn-primary" style="width: 150px; margin: 10px 0;" onclick="searchDoctors()" >Search</button>
+            </div>
+            <div class="doctor-grid" id="doctorList">
+
+            </div>
+        </div>
+
+        <div id="upcomingSection" class="section">
+            <h3>My Upcoming Appointment</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Doctor</th>
+                        <th>Queue #</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="upcomingTableBody"></tbody>
+            </table>
+        </div>
+
+        <div id="historySection" class="section">
+            <h3>Past Visit History</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Doctor</th>
+                        <th>Queue #</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="bookingModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="$('#bookingModal').hide()">&times;</span>
+            <h3 id="modalDocName">Book Appointment</h3>
+            <p style="font-size: 14px; color: #666;">Select an available schedule and proceed to payment.</p>
+
+          <label>Select Date & Time:</label>
+          <select id="scheduleSelect"></select>
+
+          <label>Payment Method:</label>
+          <select id="payMethod" onchange="togglePaymentFields()">
+             <option value="CARD">Visa / Master Card</option>
+             <option value="BANK-TRANSFER">Bank Transfer</option>
+              <option value="CASH">Pay at Clinic (Cash)</option>
+          </select>
+
+            <div id="cashArea" style="display: none; background: #e3f2fd; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;">
+                Please pay <b>Rs. 2500.00</b> at the reception desk upon arrival.
+            </div>
+
+          <div id="cardArea">
+            <input type="text" placeholder="Card Number (xxxx xxxx xxxx xxxx)">
+            <div style="display: flex; gap: 10px;">
+                <input type="text" placeholder="MM/YY">
+                <input type="text" placeholder="CVV">
+            </div>
+          </div>
+
+          <div id="bankArea" style="display: none;">
+            <div style="background: #f0f2f5; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px;">
+                <b>Bank:</b> HNB | <b>Acc:</b> 0012984755 <br>
+                <b>Branch:</b> Colombo 07
+            </div>
+            <input type="text" id="txnId" placeholder="Enter Bank Reference Number">
+          </div>
+
+          <div style="display: flex; gap: 10px; align-items: center; margin: 15px 0;">
+                <input type="checkbox" id="isEmergency" style="width: 20px; margin: 0;">
+                <label for="isEmergency" style="font-size: 14px; color: var(--danger); font-weight: bold;">Is this an Emergency?</label>
+          </div>
+
+          <button class="btn btn-success" onclick="processBooking()">Confirm & Pay Rs.2500.00</button>
+        </div>
+    </div>
+
+    <script>
+        const API = "http://localhost:8080/api/v1";
+        const TOKEN = localStorage.getItem('token');
+        const PATIENT_ID = localStorage.getItem('profileId'); 
+        const HEADERS = { "Authorization": "Bearer " + TOKEN, "Content-Type": "application/json" };
+    
+        $(document).ready(function() {
+            if (!TOKEN || localStorage.getItem('role') !== 'PATIENT') window.location.href = 'signIn.html';
+            $("#patientName").text("Patient ID: " + PATIENT_ID);
+            searchDoctors();
+        });
+
+        function showSection(id){
+            $(".section").hide();
+            $(".nav-item").removeClass("nav-active");
+            $(`#${id}`).fadeIn();
+            $(`a[href="#${id}"]`).addClass("nav-active");
+        }
+
+        function searchDoctors(){
+            const q = $("#specSearch").val();
+            $.ajax({
+                url: `${API}/doctors/search?q=${q}`,
+                headers: HEADERS,
+                success: (res) => {
+                    $("#doctorList").empty();
+                    res.data.forEach(d => {
+                        $("#doctorList").append(`
+                            <div class="doc-card">
+                                <div style="font-size: 50px;">👨‍⚕️</div>
+                                <h3>Dr. ${d.name}</h3>
+                                <div class="doc-spec">${d.specialization}</div>
+                                <button class="btn btn-primary" onclick="openBooking(${d.id}, '${d.name}')">Book Now</button>
+                            </div>
+                        `);
+                    });
+                },
+                error: function(err){
+                    console.log(err);
+                }
+            });
+        }
+
+        let selectedDocId = null;
+        function openBooking(id, name){
+            selectedDocId = id;
+            $("#modalDocName").text("Booking with Dr. " + name);
+
+            $.ajax({
+                url: `${API}/schedules/doctor/${id}`,
+                headers: HEADERS,
+                success: (res) =>{
+                    $("#scheduleSelect").empty();
+                    // const docSchedules = res.data.filter(s => s.doctorId == id && s.active);
+                   
+                   const activeSchedules = res.data.filter(s => s.active !== false);
+                   
+                    if(activeSchedules.length == 0){
+                        $("#scheduleSelect").append('<option>No schedules available</option>');
+                    }else{
+                        activeSchedules.forEach(s => {
+                            $("#scheduleSelect").append(`<option value="${s.id}">${s.date} | ${s.startTime}</option>`);
+                        });
+                        $("#bookingModal").show();
+                    }
+                },
+                error: function(err){
+                    console.log(err);
+                    alert("Failed to load schedules for this doctor.");
+                }
+            });
+        }
+
+        function togglePaymentFields(){
+            // if ($("#payMethod").val() === "BANK_TRANSFER") {
+            //     $("#bankArea").show(); $("#cardArea").hide();
+            // } else {
+            //     $("#bankArea").hide(); $("#cardArea").show();
+            // }
+            const method = $("#payMethod").val();
+            $("#bankArea, #cardArea, #cashArea").hide();
+            
+            if (method === "BANK_TRANSFER") $("#bankArea").show();
+            else if (method === "CARD") $("#cardArea").show();
+            else if (method === "CASH") $("#cashArea").show();
+        }
+
+        function processBooking(){
+            const method = $("#payMethod").val();
+            let txn = "";
+
+            if(method === "CARD") txn = "CARD-MOCK-" + Date.now();
+            else if(method === "BANK_TRANSFER") txn = $("#txnId").val();
+            else txn = "CASH-ON-ARRIVAL";
+
+            if ((method === "BANK-TRANSFER" || method === "BANK_TRANSFER") && !txn) {
+                alert("Please enter the Bank Reference Number");
+                return;
+            }
+
+            const data = {
+                doctorId: parseInt(selectedDocId),
+                patientId: parseInt(PATIENT_ID),
+                scheduleId: parseInt($("#scheduleSelect").val()),
+                paymentMethod: method,
+                transactionId: txn,
+                isEmergency: $("#isEmergency").is(":checked")
+            };
+
+            $.ajax({
+                url: `${API}/appointments/book`,
+                method: 'POST',
+                headers: HEADERS,
+                data: JSON.stringify(data),
+                success: (res) => {
+                    alert("Success! Your Queue Number is: " + res.data.queueNumber);
+                    $("#bookingModal").hide();
+                    showSection('upcomingSection');
+                    loadUpcoming();
+                },
+                error: (xhr) => {const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : "Server Error";
+    alert("Booking Failed: " + errorMsg);
+    console.error("Full Error:", xhr.responseText);}
+                //alert(xhr.responseJSON.message || "Booking Failed")
+            });
+        }
+
+        function loadUpcoming(){
+            $.ajax({
+        url: `${API}/patients/${PATIENT_ID}/upcoming`,
+        headers: HEADERS,
+        success: (res) => {
+            $("#upcomingTableBody").empty();
+            res.data.forEach(a => {
+                const appId = a.id || a.appointmentId; 
+
+                $("#upcomingTableBody").append(`
+                    <tr>
+                        <td>${a.appointmentDate}</td>
+                        <td>Dr. ${a.doctorName}</td>
+                        <td><b>#${a.queueNumber}</b></td>
+                        <td><span class="badge status-booked">${a.status}</span></td>
+                        <td>
+                            <button class="btn btn-danger" 
+                                    style="padding:5px 10px; font-size:12px;" 
+                                    onclick="cancelApp(${appId})">
+                                Cancel
+                            </button>
+                        </td>
+                    </tr>
+                `);
+            });
+        },
+        error: (err) => console.log(err)
+    });
+        }
+
+        function loadHistory(){
+            $.ajax({
+                url: `${API}/appointments/patient-history/${PATIENT_ID}`,
+                headers:HEADERS,
+                success: (res) => {
+                    $("#historyTableBody").empty();
+                    res.data.forEach(a => {
+                        $("#historyTableBody").append(`
+                            <tr>
+                                <td>${a.appointmentDate}</td>
+                                <td>Dr. ${a.doctorName}</td>
+                                <td>#${a.queueNumber}</td>
+                                <td><span class="badge" style="background:#d1e7dd; color:#0f5132;">${a.status}</span></td>
+                            </tr>
+                        `);
+                    });
+                },
+                error: function(err){
+                    console.log(err);
+                }
+            });
+        }
+
+        function cancelApp(id){
+
+            if(!id || id === "undefined") {
+               alert("Error: Appointment ID is missing. Please refresh the page.");
+               return;
+            }
+
+            if(confirm("dDo you want to cancel this appointment?")){
+                $.ajax({
+                    url: `${API}/appointments/patient/cancel/${id}?patientId=${PATIENT_ID}`,
+                    method: 'PUT',
+                    headers: HEADERS,
+                    success: () => { alert("Cancelled!"); loadUpcoming();
+                        
+                     },
+                      error: function(err){
+                    console.log(err);
+                }
+
+                });
+            }
+        }
+        function logout(){
+            localStorage.clear(); window.location.href = 'signIn.html';
+        }
+    </script>
+</body>
+</html>

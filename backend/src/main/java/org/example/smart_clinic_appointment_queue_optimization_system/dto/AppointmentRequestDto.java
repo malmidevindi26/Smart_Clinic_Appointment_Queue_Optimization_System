@@ -10,4 +10,5 @@ public class AppointmentRequestDto {
     private Long scheduleId;
     private boolean isEmergency;
     private String paymentMethod;
+    private String transactionId;
 }

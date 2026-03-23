@@ -263,17 +263,15 @@
                 //     alert("Failed to add a doctor...")
                 // }
                 error: function(xhr) {
-                    // 1. Try to get the message from your ApiResponse DTO
+                    console.log(xhr)
                     let errorMsg = "Failed to add doctor";
 
                     if (xhr.responseJSON && xhr.responseJSON.message) {
                         errorMsg = xhr.responseJSON.message;
                     } else if (xhr.responseText) {
-                        // 2. Fallback if the response is just a string
                         errorMsg = xhr.responseText;
                     }
 
-                    // Show the specific "Username already taken" message
                     alert("Error: " + errorMsg);
                     console.error(xhr);
                 }

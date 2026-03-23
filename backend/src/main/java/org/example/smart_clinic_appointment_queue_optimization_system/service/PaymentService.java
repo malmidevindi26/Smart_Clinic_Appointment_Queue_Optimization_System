@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -15,16 +16,27 @@ public class PaymentService {
     private final PaymentRepository paymentRepository;
 
     @Transactional
-    public void processAppointmentPayment(Appointment appointment, double amount, String method) {
-        String status = method.equalsIgnoreCase("ONLINE") ? "PAID" : "PENDING";
-
+    public void processAppointmentPayment(Appointment app, double amount, String method, String transactionId) {
+//        String status = method.equalsIgnoreCase("ONLINE") ? "PAID" : "PENDING";
+//
+//        Payment payment = Payment.builder()
+//                .amount(amount)
+//                .paymentStatus(status)
+//                .paymentDate(LocalDate.now())
+//                .appointment(appointment)
+//                .build();
+//
+//        paymentRepository.save(payment);
+        if (method == null) method = "CASH";
         Payment payment = Payment.builder()
+                .appointment(app)
                 .amount(amount)
-                .paymentStatus(status)
+                .paymentType(method)
+                .transactionId(transactionId)
                 .paymentDate(LocalDate.now())
-                .appointment(appointment)
+                .paymentStatus(method.equalsIgnoreCase("CASH") ? "PENDING" : "PAID")
                 .build();
 
-        paymentRepository.save(payment);
+          paymentRepository.save(payment);
     }
 }
