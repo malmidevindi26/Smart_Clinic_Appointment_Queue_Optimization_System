@@ -53,4 +53,11 @@ public class AppointmentController {
 //
 //        return ResponseEntity.ok(new ApiResponse(200, "Status updated", null));
 //    }
+
+    @PutMapping("/doctor/cancel/{id}")
+    public ResponseEntity<ApiResponse> doctorCancel(@PathVariable Long id){
+        return ResponseEntity.ok(
+                new ApiResponse(200, "Appointment cancelled by Doctor", appointmentService.doctorCancelAppointment(id))
+        );
+    }
 }

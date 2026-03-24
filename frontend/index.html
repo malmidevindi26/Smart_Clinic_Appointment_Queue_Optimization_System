@@ -3,11 +3,257 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Page</title>
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  
+    <title>Smart Clinic | Integrated Practice Management Solutions</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary-blue: #0056b3; /* GoodX Corporate Blue */
+            --accent-cyan: #00d2ff;
+            --dark-navy: #16213e;
+            --soft-bg: #f4f7f9;
+            --white: #ffffff;
+            --text-gray: #5a5a5a;
+            --success: #1cc88a;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Open Sans', sans-serif; color: var(--dark-navy); line-height: 1.6; overflow-x: hidden; }
+        h1, h2, h3, h4, .logo { font-family: 'Montserrat', sans-serif; }
+
+        /* --- NAVIGATION --- */
+        nav {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 8%; background: var(--white);
+            position: fixed; width: 100%; top: 0; z-index: 1000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .logo { font-size: 22px; color: var(--primary-blue); text-transform: uppercase; letter-spacing: 1px; }
+        .logo span { color: var(--accent-cyan); }
+
+        .nav-links { display: flex; align-items: center; list-style: none; }
+        .nav-links li { margin: 0 18px; }
+        .nav-links a { text-decoration: none; color: var(--dark-navy); font-size: 14px; font-weight: 600; transition: 0.3s; }
+        .nav-links a:hover { color: var(--primary-blue); }
+
+        .btn-support {
+            background: var(--primary-blue); color: white !important;
+            padding: 10px 22px; border-radius: 4px; display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 4px 10px rgba(0, 86, 179, 0.3);
+        }
+
+        /* --- HERO SECTION --- */
+        .hero {
+            height: 90vh;
+            background: linear-gradient(rgba(22, 33, 62, 0.7), rgba(22, 33, 62, 0.5)),
+            url('https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover; background-position: center;
+            display: flex; align-items: center; padding: 0 8%; color: var(--white); margin-top: 60px;
+        }
+        .hero-content { max-width: 700px; }
+        .hero-content h1 { font-size: 56px; line-height: 1.1; margin-bottom: 25px; }
+        .hero-content p { font-size: 18px; margin-bottom: 35px; opacity: 0.9; }
+
+        .btn-cta {
+            padding: 16px 40px; background: var(--accent-cyan); color: var(--dark-navy);
+            text-decoration: none; border-radius: 4px; font-weight: 700; text-transform: uppercase;
+            transition: 0.3s; display: inline-block;
+        }
+        .btn-cta:hover { background: var(--white); transform: translateY(-3px); }
+
+        /* --- STATS BAR --- */
+        .stats-bar {
+            background: var(--white); padding: 40px 8%;
+            display: grid; grid-template-columns: repeat(4, 1fr);
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            position: relative; margin-top: -50px; width: 84%; left: 8%; border-radius: 8px;
+        }
+        .stat-item h3 { font-size: 32px; color: var(--primary-blue); }
+        .stat-item p { font-size: 14px; color: var(--text-gray); font-weight: 600; }
+
+        /* --- SECTIONS --- */
+        section { padding: 100px 8%; }
+        .section-header { text-align: center; margin-bottom: 70px; }
+        .section-header h2 { font-size: 32px; color: var(--dark-navy); margin-bottom: 10px; }
+        .section-header .line { width: 60px; height: 4px; background: var(--accent-cyan); margin: 0 auto; }
+
+        /* ABOUT SECTION */
+        .about-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; }
+        .about-img img { width: 100%; border-radius: 12px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); }
+        .about-text h3 { font-size: 26px; margin-bottom: 20px; color: var(--primary-blue); }
+        .about-text p { margin-bottom: 20px; color: var(--text-gray); }
+
+        /* SOLUTIONS GRID */
+        .solutions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        .sol-card {
+            background: var(--soft-bg); padding: 40px 30px; border-radius: 12px;
+            transition: 0.4s; text-align: center; border: 1px solid transparent;
+        }
+        .sol-card:hover {
+            background: var(--white); transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1); border-color: var(--accent-cyan);
+        }
+        .sol-card i { font-size: 45px; color: var(--primary-blue); margin-bottom: 25px; }
+        .sol-card h4 { font-size: 20px; margin-bottom: 15px; color: var(--dark-navy); }
+        .sol-card p { font-size: 14px; color: var(--text-gray); text-align: justify; }
+
+        /* TESTIMONIALS */
+        .testimonial-card { background: var(--white); padding: 30px; border-radius: 12px; box-shadow: 0 10px 20px rgba(0,0,0,0.05); }
+        .stars { color: #ffcc00; margin-bottom: 15px; font-size: 12px; }
+        .user-info { display: flex; align-items: center; gap: 15px; margin-top: 20px; }
+        .user-info img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+
+        /* CONTACT SECTION */
+        .contact-container {
+            display: grid; grid-template-columns: 1fr 2fr; gap: 40px;
+            background: var(--dark-navy); color: white; padding: 60px; border-radius: 15px;
+        }
+        .contact-info i { color: var(--accent-cyan); margin-right: 10px; }
+        .contact-form input, .contact-form textarea {
+            width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 4px; border: none; outline: none;
+        }
+
+        footer { background: #0b132b; color: #a1adff; text-align: center; padding: 50px; font-size: 14px; }
+
+        @media (max-width: 992px) {
+            .hero-content h1 { font-size: 38px; }
+            .stats-bar { grid-template-columns: repeat(2, 1fr); gap: 20px; width: 90%; left: 5%; }
+            .about-grid, .contact-container { grid-template-columns: 1fr; }
+            .nav-links { display: none; }
+        }
+    </style>
 </head>
 <body>
+
+<nav>
+    <div class="logo">SMART<span>CLINIC</span></div>
+    <ul class="nav-links">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#about">About</a></li>
+        <li><a href="#solutions">Solutions</a></li>
+        <li><a href="#testimonials">Testimonials</a></li>
+        <li><a href="#contact">Contact</a></li>
+        <li><a href="pages/signIn.html" class="btn-support"><i class="fas fa-headset"></i> Login</a></li>
+    </ul>
+</nav>
+
+<section id="home" class="hero">
+    <div class="hero-content">
+        <h1>Advanced Software for Modern Healthcare</h1>
+        <p>From Paperless EMR to AI-Driven Queue Optimization—we provide the tools to make your medical practice more efficient, profitable, and patient-centric.</p>
+        <a href="pages/signIn.html" class="btn-cta">Access Portal</a>
+    </div>
+</section>
+
+<div class="stats-bar">
+    <div class="stat-item"><h3>500+</h3><p>Clinics Empowered</p></div>
+    <div class="stat-item"><h3>1.2M</h3><p>Patient Records</p></div>
+    <div class="stat-item"><h3>99.9%</h3><p>System Uptime</p></div>
+    <div class="stat-item"><h3>24/7</h3><p>Active Support</p></div>
+</div>
+
+<section id="about">
+    <div class="about-grid">
+        <div class="about-img">
+            <img src="https://images.unsplash.com/photo-1519494026892-80bbd2d6fd0d?auto=format&fit=crop&w=800&q=80" alt="Modern Clinic Reception">
+        </div>
+        <div class="about-text">
+            <div class="section-header" style="text-align: left; margin-bottom: 30px;">
+                <h2>A New Standard in Healthcare</h2>
+                <div class="line" style="margin: 0;"></div>
+            </div>
+            <h3>Your Health, Our Priority</h3>
+            <p>At Smart Clinic, we believe that medical care should be as seamless as it is compassionate. We have designed our facility to provide a calming environment where patients receive immediate attention from the island's leading specialists.</p>
+
+            <p>Our focus is on precision and efficiency. By integrating advanced coordination systems, we ensure that your medical journey—from registration to recovery—is managed with the highest level of professional care and minimal waiting times.</p>
+
+            <p><i class="fas fa-check-circle" style="color:var(--success)"></i> Multidisciplinary Specialist Consultations</p>
+            <p><i class="fas fa-check-circle" style="color:var(--success)"></i> Fully Integrated Digital Patient Records</p>
+            <p><i class="fas fa-check-circle" style="color:var(--success)"></i> Modern, Comfortable Consultation Suites</p>
+            <p><i class="fas fa-check-circle" style="color:var(--success)"></i> Real-time Appointment & Queue Updates</p>
+        </div>
+    </div>
+</section>
+
+<section id="solutions" style="background-color: #fcfdfe;">
+    <div class="section-header">
+        <h2>Our Core Solutions</h2>
+        <div class="line"></div>
+    </div>
+    <div class="solutions-grid">
+        <div class="sol-card">
+            <i class="fas fa-user-clock"></i>
+            <h4>Queue Optimization</h4>
+            <p>Our proprietary algorithm dynamically calculates patient arrival times and optimizes the daily clinic diary. By balancing emergency cases with standard bookings, we ensure predicted wait times are accurate, improving the patient experience.</p>
+        </div>
+        <div class="sol-card">
+            <i class="fas fa-file-invoice-dollar"></i>
+            <h4>Medical Billing</h4>
+            <p>Manage your clinic’s financial health with precision. Our integrated billing engine supports multi-channel payments, including instant Bank Transfers and Cash-on-Arrival, providing admins with real-time revenue insights.</p>
+        </div>
+        <div class="sol-card">
+            <i class="fas fa-notes-medical"></i>
+            <h4>Paperless EMR</h4>
+            <p>Transition to a fully digital environment with encrypted Electronic Medical Records. Securely store clinical notes, digital prescriptions, and diagnostic history accessible only to authorized personnel on any device.</p>
+        </div>
+    </div>
+</section>
+
+<section id="testimonials" style="background: var(--soft-bg);">
+    <div class="section-header">
+        <h2>Clinician Success Stories</h2>
+        <div class="line"></div>
+    </div>
+    <div class="solutions-grid">
+        <div class="testimonial-card">
+            <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+            <p style="font-style: italic; font-size: 14px; color: var(--text-gray);">"The Queue Optimization module reduced our patient wait times by 40%. The automated numbering system allows my staff to focus on care rather than managing crowd flow in the lobby."</p>
+            <div class="user-info">
+                <img src="https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?auto=format&fit=crop&w=100&h=100&q=80" alt="Dr. Silva">
+                <div><h4 style="font-size: 15px;">Dr. Aruna Silva</h4><small>Consultant Physician</small></div>
+            </div>
+        </div>
+        <div class="testimonial-card">
+            <div class="stars"><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i></div>
+            <p style="font-style: italic; font-size: 14px; color: var(--text-gray);">"Switching to the Cloud EMR was the best decision for my practice. I can access history from my tablet instantly. It’s professional, secure, and incredibly fast."</p>
+            <div class="user-info">
+                <img src="https://images.unsplash.com/photo-1559839734-2b71f1536783?auto=format&fit=crop&w=100&h=100&q=80" alt="Dr. Perera">
+                <div><h4 style="font-size: 15px;">Dr. Kavindi Perera</h4><small>Specialist Orthodontist</small></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="contact">
+    <div class="contact-container">
+        <div class="contact-info">
+            <h2>Ready to Upgrade?</h2>
+            <p style="margin: 20px 0;">Contact our technical team for a personalized demo or system migration support.</p>
+            <p><i class="fas fa-phone-alt"></i> +94 11 234 5678</p>
+            <p><i class="fas fa-envelope"></i> support@smartclinic.com</p>
+            <p><i class="fas fa-map-marker-alt"></i> Independence Square, Colombo</p>
+        </div>
+        <div class="contact-form">
+            <form onsubmit="event.preventDefault(); alert('Request Sent! Our team will contact you shortly.');">
+                <div style="display: flex; gap: 15px;">
+                    <input type="text" placeholder="Full Name" required>
+                    <input type="email" placeholder="Work Email" required>
+                </div>
+                <input type="text" placeholder="Clinic Name">
+                <textarea rows="5" placeholder="How can we help you?"></textarea>
+                <button type="submit" class="btn-cta" style="border:none; cursor:pointer; width: 100%;">Submit Request</button>
+            </form>
+        </div>
+    </div>
+</section>
+
+<footer>
+    <p>&copy; 2026 Smart Clinic International | A Professional Practice Management Solution</p>
+    <p style="margin-top: 10px; font-size: 11px; opacity: 0.5;">Inspired by industry leading PMS standards.</p>
+</footer>
 
 </body>
 </html>

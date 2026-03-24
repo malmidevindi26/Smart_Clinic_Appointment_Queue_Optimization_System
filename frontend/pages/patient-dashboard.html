@@ -120,7 +120,7 @@
           <label>Payment Method:</label>
           <select id="payMethod" onchange="togglePaymentFields()">
              <option value="CARD">Visa / Master Card</option>
-             <option value="BANK-TRANSFER">Bank Transfer</option>
+           <option value="BANK_TRANSFER">Bank Transfer</option>
               <option value="CASH">Pay at Clinic (Cash)</option>
           </select>
 
@@ -241,6 +241,8 @@
         }
 
         function processBooking(){
+         const emergencyValue = $("#isEmergency").is(":checked");
+
             const method = $("#payMethod").val();
             let txn = "";
 
@@ -259,7 +261,7 @@
                 scheduleId: parseInt($("#scheduleSelect").val()),
                 paymentMethod: method,
                 transactionId: txn,
-                isEmergency: $("#isEmergency").is(":checked")
+                emergency: emergencyValue
             };
 
             $.ajax({
@@ -273,9 +275,22 @@
                     showSection('upcomingSection');
                     loadUpcoming();
                 },
-                error: (xhr) => {const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : "Server Error";
-    alert("Booking Failed: " + errorMsg);
-    console.error("Full Error:", xhr.responseText);}
+                error: (xhr) => {
+                    const response = xhr.responseJSON;
+                    let displayMessage = "Booking Failed: Server Error";
+
+                    if (response) {
+                        if (response.data) {
+                            displayMessage = response.data;
+                        }
+                        else if (response.message) {
+                            displayMessage = response.message;
+                        }
+                    }
+
+                    alert(displayMessage);
+                    console.error("Full Error details:", xhr.responseText);
+                }
                 //alert(xhr.responseJSON.message || "Booking Failed")
             });
         }

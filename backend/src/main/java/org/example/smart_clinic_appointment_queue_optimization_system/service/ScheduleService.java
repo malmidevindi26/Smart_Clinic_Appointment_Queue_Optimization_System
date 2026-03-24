@@ -35,12 +35,26 @@ public class ScheduleService {
         Doctor doctor = doctorRepository.findById(dto.getDoctorId())
                 .orElseThrow(() -> new RuntimeException("doctor not found"));
 
+        List<Schedule> conflict = scheduleRepository.findOverlappingSchedules(
+                dto.getDoctorId(),dto.getDate(),dto.getStartTime(),dto.getEndTime()
+        );
+
+        if (!conflict.isEmpty()) {
+            throw new RuntimeException("Conflict: Dr. " + doctor.getName() +
+                    "already has a schedule during this time period (" + conflict.get(0)
+                    .getStartTime() + "-" + conflict.get(0).getEndTime() + ")");
+        }
+
+        if (dto.getMaxSlots() > doctor.getDailyPatientLimit()){
+            throw new RuntimeException("Max slots exceeds doctor's daily  limit of " + doctor.getDailyPatientLimit());
+        }
         Schedule schedule = Schedule.builder()
                 .date(dto.getDate())
                 .startTime(dto.getStartTime())
                 .endTime(dto.getEndTime())
                 .maxSlots(dto.getMaxSlots())
                 .doctor(doctor)
+                .isActive(true)
                 .build();
 
         scheduleRepository.save(schedule);
@@ -73,6 +87,19 @@ public class ScheduleService {
     public String updateSchedule(Long id,  ScheduleRequestDto dto) {
         Schedule schedule = scheduleRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Schedule not found"));
+
+        List<Schedule> conflicts = scheduleRepository.findOverlappingSchedulesExcludingId(
+                schedule.getDoctor().getId(), dto.getDate(), dto.getStartTime(), dto.getEndTime(), id);
+
+        if (!conflicts.isEmpty()) {
+            throw new RuntimeException("Update Failed: Overlaps with an existing slot (" +
+                    conflicts.get(0).getStartTime() + " - " + conflicts.get(0).getEndTime() + ")");
+        }
+
+        if (dto.getMaxSlots() > schedule.getDoctor().getDailyPatientLimit()) {
+            throw new RuntimeException("Max slots exceed the doctor's daily limit of " +
+                    schedule.getDoctor().getDailyPatientLimit());
+        }
 
         int currentBooking = appointmentRepository.countByScheduleIdAndStatus(id, "BOOKED");
 

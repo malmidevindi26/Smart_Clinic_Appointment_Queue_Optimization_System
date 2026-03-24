@@ -52,4 +52,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     );
 
     int countByScheduleIdAndStatus(Long scheduleId, String status);
+    List<Appointment> findAllByDoctorIdAndAppointmentDateAndStatusOrderByIsPriorityDescQueueNumberAsc(
+            Long doctorId, LocalDate date, String status);
+
+    List<Appointment> findAllByDoctorAndAppointmentDateAndStatusOrderByIsPriorityDescQueueNumberAsc(
+            Doctor doctor, LocalDate date, String status);
+
+
 }

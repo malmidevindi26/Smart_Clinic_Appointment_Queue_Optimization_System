@@ -60,6 +60,7 @@ public class SecurityConfig {
 
                                 // 6. Restrict other admin routes
                                 .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                                .requestMatchers("/api/v1/appointments/doctor/cancel/**").hasRole("DOCTOR")
                                 .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

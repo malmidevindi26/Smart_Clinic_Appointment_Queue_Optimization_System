@@ -225,40 +225,51 @@
                 url: API + "/analytics/revenue/doctor/" + PROF_ID,
                 method: 'GET',
                 headers: HEADERS,
-                success: (res) => $("#docRevenue").text("Rs. " + (res.data ? res.data.toFixed(2) : "0.00"))
+                success: (res) => $("#docRevenue").text("Rs. " + (res.data ? res.data.toFixed(2) : "0.00")),
+                error: (err) => {
+                    console.error("Revenue load failed:", err);
+                    $("#docRevenue").text("Rs. 0.00");
+                }
             });
         }
 
-        function loadQueue(){
-            $.ajax({
-                url: API + "/doctors/" + PROF_ID + "/today-appointments",
-                method: 'GET',
-                headers: HEADERS,
-                success: function(res){
-                    const tbody = $("#queueTableBody").empty();
-                    if(!res.data || res.data.length === 0) {
-                        tbody.append('<tr><td colspan="4" style="text-align:center; color:#858796;">No patients in queue for today.</td></tr>');
-                        return;
-                    }
-                    res.data.forEach(app => {
-                        tbody.append(`<tr>
-                            <td><b style="color:var(--primary)">#${app.queueNumber}</b></td>
-                            <td>${app.patientName}</td>
-                            <td><span class="badge badge-booked">${app.status}</span></td>
-                            <td>
-                                <button class="btn btn-complete" onclick="updateStatus(${app.id}, 'complete')">Treat</button>
-                                <button class="btn btn-cancel" onclick="updateStatus(${app.id}, 'cancel')">No Show</button>
-                            </td>
-                        </tr>`);
-                    });
-                },
-                error: function(err){
-                    console.log(err)
-                    alert("Failed to load today appointment...")
-                }
-            })
-        }
+function loadQueue(){
+    $.ajax({
+        url: API + "/doctors/" + PROF_ID + "/today-appointments",
+        method: 'GET',
+        headers: HEADERS,
+        success: function(res){
+            const tbody = $("#queueTableBody").empty();
+            if(!res.data || res.data.length === 0) {
+                tbody.append('<tr><td colspan="4" style="text-align:center;">No patients today.</td></tr>');
+                return;
+            }
 
+            res.data.forEach(app => {
+                // Safety check for the boolean field name
+                const isEmergency = app.isPriority === true || app.priority === true;
+
+                // 1. Create the Emergency Badge
+                const priorityLabel = isEmergency 
+                    ? `<span class="badge" style="background:var(--danger); color:white; margin-left:10px;">🚨 EMERGENCY</span>` 
+                    : "";
+
+                // 2. Highlight the entire row red if it's an emergency
+                const rowStyle = isEmergency ? `style="background-color: #fff5f5; border-left: 5px solid var(--danger);"` : "";
+                
+                tbody.append(`<tr ${rowStyle}>
+                    <td><b style="color:var(--primary)">#${app.queueNumber}</b></td>
+                    <td>${app.patientName} ${priorityLabel}</td>
+                    <td><span class="badge badge-booked">${app.status}</span></td>
+                    <td>
+                        <button class="btn btn-complete" onclick="updateStatus(${app.id}, 'complete')">Treat</button>
+                        <button class="btn btn-cancel" onclick="updateStatus(${app.id}, 'cancel')">No Show</button>
+                    </td>
+                </tr>`);    
+            });
+        }
+    });
+}
         function loadUpcoming(){
             $.ajax({
                 url: API + "/doctors/" + PROF_ID + "/upcoming",
@@ -304,21 +315,26 @@
                 }
             });
         }
-
-        function updateStatus(id, type){
+        function updateStatus(id, type) {
             const msg = type === 'complete' ? "Mark patient as treated?" : "Cancel this appointment?";
-            if(!confirm(msg)) return;
+            if (!confirm(msg)) return;
 
-            const endpoint = type === 'complete' ? `/appointments/complete/${id}` : `/appointments/patient/cancel/${id}?patientId=0`;            $.ajax({
+          const endpoint = type === 'complete'
+        ? `/appointments/complete/${id}`
+        : `/appointments/doctor/cancel/${id}`; // No more ?patientId=0
+        
+            $.ajax({
                 url: API + endpoint,
                 method: 'PUT',
                 headers: HEADERS,
-                success: function(res){
+                success: function(res) {
                     alert(res.message);
                     refreshAll();
                 },
-                error: (xhr) =>
-                    alert("Error updating status: " + (xhr.responseJSON ? xhr.responseJSON.message : "Unknown error"))
+                error: function(xhr) {
+                    const errorMsg = xhr.responseJSON ? xhr.responseJSON.message : "Server Error (500)";
+                    alert("Error: " + errorMsg);
+                }
             });
         }
 

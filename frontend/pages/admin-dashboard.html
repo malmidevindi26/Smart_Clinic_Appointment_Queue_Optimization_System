@@ -386,9 +386,25 @@
                     resetSchedForm();
                     loadSchedules();
                 },
-                error: function(err){
-                    console.log(err)
-                    alert("Failed to save schedule...")
+                // error: function(err){
+                //     console.log(err)
+                //     alert("Failed to save schedule...")
+                // }
+                error: (xhr) => {
+                    const response = xhr.responseJSON;
+                    let displayMessage = "Failed to save schedule...";
+
+                    if (response) {
+                        if (response.data) {
+                            displayMessage = response.data;
+                        }
+                        else if (response.message) {
+                            displayMessage = response.message;
+                        }
+                    }
+
+                    alert(displayMessage);
+                    console.error("Full Error details:", xhr.responseText);
                 }
             });
          }

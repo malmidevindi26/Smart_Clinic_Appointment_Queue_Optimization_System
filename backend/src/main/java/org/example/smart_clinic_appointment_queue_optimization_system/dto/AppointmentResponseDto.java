@@ -17,4 +17,5 @@ public class AppointmentResponseDto {
     private int queueNumber;
     private LocalDate appointmentDate;
     private String status;
+    private boolean isPriority;
 }

@@ -92,7 +92,8 @@ public class AppointmentService {
               patient.getName(),
               nextQueueNumber,
               savedAppointment.getAppointmentDate(),
-              savedAppointment.getStatus()
+              savedAppointment.getStatus(),
+              savedAppointment.isPriority()
       );
    }
    @Transactional
@@ -131,7 +132,7 @@ public class AppointmentService {
 
           LocalDate today = LocalDate.now();
 
-          List<Appointment> dailyAppointment = appointmentRepository.findAllByDoctorAndAppointmentDateAndStatusOrderByQueueNumberAsc(doctor, today, "BOOKED");
+          List<Appointment> dailyAppointment = appointmentRepository.findAllByDoctorAndAppointmentDateAndStatusOrderByIsPriorityDescQueueNumberAsc(doctor, today, "BOOKED");
 
           return dailyAppointment.stream().map(app -> new AppointmentResponseDto(
                   app.getId(),
@@ -139,7 +140,8 @@ public class AppointmentService {
                   app.getPatient().getName(),
                   app.getQueueNumber(),
                   app.getAppointmentDate(),
-                  app.getStatus()
+                  app.getStatus(),
+                  app.isPriority()
           )).toList();
       }
 
@@ -153,14 +155,15 @@ public class AppointmentService {
                   app.getPatient().getName(),
                   app.getQueueNumber(),
                   app.getAppointmentDate(),
-                  app.getStatus()
+                  app.getStatus(),
+                  app.isPriority()
           )).toList();
    }
 
    public List<AppointmentResponseDto> getDoctorDashboard(Long doctorId) {
       LocalDate today = LocalDate.now();
 
-      return appointmentRepository.findAllByDoctorIdAndAppointmentDateAndStatusOrderByQueueNumberAsc(
+      return appointmentRepository.findAllByDoctorIdAndAppointmentDateAndStatusOrderByIsPriorityDescQueueNumberAsc(
               doctorId,
               today,
               "BOOKED"
@@ -170,7 +173,8 @@ public class AppointmentService {
               app.getPatient().getName(),
               app.getQueueNumber(),
               app.getAppointmentDate(),
-              app.getStatus()
+              app.getStatus(),
+              app.isPriority()
       )).toList();
    }
 
@@ -190,7 +194,8 @@ public class AppointmentService {
               app.getPatient().getName(),
               app.getQueueNumber(),
               app.getAppointmentDate(),
-              app.getStatus()
+              app.getStatus(),
+              app.isPriority()
       )).toList();
    }
 
@@ -207,7 +212,22 @@ public class AppointmentService {
               app.getPatient().getName(),
               app.getQueueNumber(),
               app.getAppointmentDate(),
-              app.getStatus()
+              app.getStatus(),
+              app.isPriority()
       )).toList();
+   }
+
+   @Transactional
+   public String doctorCancelAppointment(Long appointmentId) {
+      Appointment appointment = appointmentRepository.findById(appointmentId)
+              .orElseThrow(() -> new RuntimeException("Appointment not found"));
+
+      if(!"BOOKED".equals(appointment.getStatus())) {
+         throw new RuntimeException("Cannot cancel an appointment that is " + appointment.getStatus());
+      }
+
+      appointment.setStatus("CANCELLED");
+      appointmentRepository.save(appointment);
+      return "Appointment #" + appointmentId + " has been cancelled by the doctor.";
    }
 }
