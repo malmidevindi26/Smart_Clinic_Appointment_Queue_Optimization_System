@@ -197,31 +197,28 @@
         }
 
         let selectedDocId = null;
-        function openBooking(id, name){
+
+        function openBooking(id, name) {
             selectedDocId = id;
             $("#modalDocName").text("Booking with Dr. " + name);
 
             $.ajax({
-                url: `${API}/schedules/doctor/${id}`,
+                url: `${API}/schedules/available`,
                 headers: HEADERS,
-                success: (res) =>{
+                success: (res) => {
                     $("#scheduleSelect").empty();
-                    // const docSchedules = res.data.filter(s => s.doctorId == id && s.active);
-                   
-                   const activeSchedules = res.data.filter(s => s.active !== false);
-                   
-                    if(activeSchedules.length == 0){
-                        $("#scheduleSelect").append('<option>No schedules available</option>');
-                    }else{
-                        activeSchedules.forEach(s => {
+
+                    const docSchedules = res.data.filter(s => s.doctorId == id);
+
+                    if (docSchedules.length === 0) {
+                        alert("No schedules found for Dr. " + name);
+                        $("#bookingModal").hide();
+                    } else {
+                        docSchedules.forEach(s => {
                             $("#scheduleSelect").append(`<option value="${s.id}">${s.date} | ${s.startTime}</option>`);
                         });
                         $("#bookingModal").show();
                     }
-                },
-                error: function(err){
-                    console.log(err);
-                    alert("Failed to load schedules for this doctor.");
                 }
             });
         }

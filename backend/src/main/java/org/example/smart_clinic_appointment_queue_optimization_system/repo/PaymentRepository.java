@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.util.Optional;
 
 public interface PaymentRepository extends JpaRepository<Payment, Long> {
     // Calculate total revenue from completed payments
@@ -19,4 +20,7 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     // Daily income
     @Query("SELECT SUM(p.amount) FROM Payment p WHERE p.paymentDate = :date AND p.paymentStatus = 'PAID'")
     Double calculateDailyRevenue(@Param("date") LocalDate date);
+
+    Optional<Payment> findByAppointmentId(Long appointmentId);
+
 }

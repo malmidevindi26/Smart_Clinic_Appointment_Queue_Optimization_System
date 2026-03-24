@@ -14,7 +14,7 @@ import java.time.LocalTime;
 @NoArgsConstructor
 public class ScheduleResponseDto {
       private Long id;
-      private String doctorId;
+      private Long doctorId;
       private String doctorName;
       private LocalDate date;
       private LocalTime startTime;

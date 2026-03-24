@@ -116,12 +116,39 @@ public class ScheduleService {
         return "Schedule updated successfully" + dto.getDate();
     }
 
-
-
     public List<ScheduleResponseDto> getAllSchedules() {
         return  scheduleRepository.findAll().stream()
                 .map(schedule -> modelMapper.map(schedule, ScheduleResponseDto.class))
                 .collect(Collectors.toList());
 
+    }
+
+    @Scheduled(cron = "0 * * * * *") // Runs every minute at the 0th second
+    @Transactional
+    public void autoDeactivateExpiredSchedules() {
+        LocalDate today = LocalDate.now();
+        LocalTime now = LocalTime.now();
+
+        List<Schedule> expiredSchedules = scheduleRepository.findAll().stream()
+                .filter(s -> s.isActive() && (s.getDate().isBefore(today) ||
+                        (s.getDate().equals(today) && s.getEndTime().isBefore(now))))
+                .collect(Collectors.toList());
+
+        if (!expiredSchedules.isEmpty()) {
+            expiredSchedules.forEach(s -> s.setActive(false));
+            scheduleRepository.saveAll(expiredSchedules);
+            System.out.println("Auto-deactivated " + expiredSchedules.size() + " expired schedules.");
+        }
+    }
+
+    public List<ScheduleResponseDto> getAvailableSchedulesForPatients() {
+        return scheduleRepository.findAvailableSchedulesForPatients().stream()
+                .map(schedule -> {
+                    ScheduleResponseDto dto = modelMapper.map(schedule, ScheduleResponseDto.class);
+                    dto.setDoctorId(schedule.getDoctor().getId());
+                    dto.setDoctorName(schedule.getDoctor().getName());
+                    return dto;
+                })
+                .collect(Collectors.toList());
     }
 }

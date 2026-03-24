@@ -246,15 +246,13 @@ function loadQueue(){
             }
 
             res.data.forEach(app => {
-                // Safety check for the boolean field name
+
                 const isEmergency = app.isPriority === true || app.priority === true;
 
-                // 1. Create the Emergency Badge
                 const priorityLabel = isEmergency 
                     ? `<span class="badge" style="background:var(--danger); color:white; margin-left:10px;">🚨 EMERGENCY</span>` 
                     : "";
 
-                // 2. Highlight the entire row red if it's an emergency
                 const rowStyle = isEmergency ? `style="background-color: #fff5f5; border-left: 5px solid var(--danger);"` : "";
                 
                 tbody.append(`<tr ${rowStyle}>
@@ -321,8 +319,8 @@ function loadQueue(){
 
           const endpoint = type === 'complete'
         ? `/appointments/complete/${id}`
-        : `/appointments/doctor/cancel/${id}`; // No more ?patientId=0
-        
+        : `/appointments/doctor/cancel/${id}`; 
+
             $.ajax({
                 url: API + endpoint,
                 method: 'PUT',

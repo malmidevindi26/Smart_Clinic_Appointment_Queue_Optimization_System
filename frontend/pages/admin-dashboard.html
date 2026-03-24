@@ -347,17 +347,37 @@
                 headers: HEADERS,
                 success: function(res){
                     $("#schedTableBody").empty();
+
+                    const now = new Date();
+
                     res.data.forEach(s =>{
-                        $("#schedTableBody").append(`<tr>
-                            <td>Dr. ${s.doctorName}</td>
-                            <td>${s.date}</td>
-                            <td>${s.startTime}-${s.endTime}</td>
-                            <td>${s.maxSlots}</td>
-                    <td>${(s.isActive === true || s.active === true) ? '✅ Active' : '❌ Cancelled'}</td>
-                        <td>
-                        <span class="action-link" onclick='fillSchedForm(${JSON.stringify(s)})'>Edit</span>
-                         <span class="action-link action-delete" onclick="deleteSchedule(${s.id})">Delete</span>
-                        </td>
+
+                       const scheduleEnd = new Date(`${s.date}T${s.endTime}`);
+                
+                       let statusHtml = "";
+
+                       if (!(s.isActive === true || s.active === true)) {
+                           statusHtml = '<span style="color: var(--danger); font-weight:bold;">❌ Cancelled</span>';
+                       } 
+                       // 2. Check if the time has passed (Expired)
+                       else if (scheduleEnd < now) {
+                           statusHtml = '<span style="color: var(--secondary); font-weight:bold;">⏳ Expired</span>';
+                       } 
+                       // 3. Otherwise, it is Active
+                       else {
+                           statusHtml = '<span style="color: var(--success); font-weight:bold;">✅ Active</span>';
+                       }
+                       
+                       $("#schedTableBody").append(`<tr>
+                           <td>Dr. ${s.doctorName}</td>
+                           <td>${s.date}</td>
+                           <td>${s.startTime} - ${s.endTime}</td>
+                           <td>${s.maxSlots}</td>
+                           <td>${statusHtml}</td>
+                           <td>
+                              <span class="action-link" onclick='fillSchedForm(${JSON.stringify(s)})'>Edit</span>
+                              <span class="action-link action-delete" onclick="deleteSchedule(${s.id})">Delete</span>
+                           </td>
                         </tr>`);
                     });
                 },
@@ -438,10 +458,22 @@
                                resetSchedForm();
                                loadSchedules();
                 },
-                error: (err) => {
-                    console.log(err)
-                    alert("Failed to update schedule...")
-                }   
+                error: (xhr) => {
+                    const response = xhr.responseJSON;
+                    let displayMessage = "Failed to save schedule...";
+
+                    if (response) {
+                        if (response.data) {
+                            displayMessage = response.data;
+                        }
+                        else if (response.message) {
+                            displayMessage = response.message;
+                        }
+                    }
+
+                    alert(displayMessage);
+                    console.error("Full Error details:", xhr.responseText);
+                }
             });
          }
 
@@ -465,6 +497,8 @@
                 success: () => {
                     alert("Deleted successfully");
                     loadDoctors();
+                    resetSchedForm();
+                    loadSchedules();
                 },
                 error: (e) =>{
                     console.log(e)

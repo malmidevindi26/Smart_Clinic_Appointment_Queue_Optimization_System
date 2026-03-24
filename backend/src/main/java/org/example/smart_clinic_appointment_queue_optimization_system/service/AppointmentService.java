@@ -7,10 +7,7 @@ import org.example.smart_clinic_appointment_queue_optimization_system.entity.App
 import org.example.smart_clinic_appointment_queue_optimization_system.entity.Doctor;
 import org.example.smart_clinic_appointment_queue_optimization_system.entity.Patient;
 import org.example.smart_clinic_appointment_queue_optimization_system.entity.Schedule;
-import org.example.smart_clinic_appointment_queue_optimization_system.repo.AppointmentRepository;
-import org.example.smart_clinic_appointment_queue_optimization_system.repo.DoctorRepository;
-import org.example.smart_clinic_appointment_queue_optimization_system.repo.PatientRepository;
-import org.example.smart_clinic_appointment_queue_optimization_system.repo.ScheduleRepository;
+import org.example.smart_clinic_appointment_queue_optimization_system.repo.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +23,7 @@ public class AppointmentService {
    private final AppointmentRepository appointmentRepository;
    private final ScheduleRepository scheduleRepository;
    private final PaymentService paymentService;
+   private final PaymentRepository paymentRepository;
 
    @Transactional
    public AppointmentResponseDto bookAppointment(AppointmentRequestDto request) {
@@ -121,9 +119,17 @@ public class AppointmentService {
       if(!"BOOKED".equals(appointment.getStatus())) {
          throw new RuntimeException("Only active bookings can be marked as completed. Current status: " + appointment.getStatus());
       }
+
+           paymentRepository.findByAppointmentId(appointmentId).ifPresent(payment -> {
+              payment.setPaymentStatus("PAID");
+              paymentRepository.save(payment);
+           });
+
          appointment.setStatus("COMPLETED");
          appointmentRepository.save(appointment);
          return "Appointment #" + appointmentId + " marked as COMPLETED. Patient visit history updated.";
+
+
       }
 
       public List<AppointmentResponseDto> getDoctorDailySchedule(Long doctorId) {

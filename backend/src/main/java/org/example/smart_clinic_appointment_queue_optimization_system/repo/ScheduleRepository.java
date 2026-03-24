@@ -23,4 +23,8 @@ public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
             "AND s.id != :excludeId AND s.isActive = true " +
             "AND (s.startTime < :endTime AND s.endTime > :startTime)")
     List<Schedule> findOverlappingSchedulesExcludingId(Long doctorId, LocalDate date, LocalTime startTime, LocalTime endTime, Long excludeId);
+
+    @Query("SELECT s FROM Schedule s WHERE s.isActive = true " +
+            "AND (s.date > CURRENT_DATE OR (s.date = CURRENT_DATE AND s.startTime > CURRENT_TIME))")
+    List<Schedule> findAvailableSchedulesForPatients();
 }

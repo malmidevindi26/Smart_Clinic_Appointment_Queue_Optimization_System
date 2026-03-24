@@ -26,4 +26,11 @@ public class ScheduleController {
     public ResponseEntity<ApiResponse> getByDoctor(@PathVariable Long doctorId) {
         return ResponseEntity.ok(new ApiResponse(200, "Success", scheduleService.getSchedulesByDoctor(doctorId)));
 }
+
+    @GetMapping("/available")
+    public ResponseEntity<ApiResponse> getAvailableSchedules() {
+        return ResponseEntity.ok(
+                new ApiResponse(200, "Success", scheduleService.getAvailableSchedulesForPatients())
+        );
+    }
 }

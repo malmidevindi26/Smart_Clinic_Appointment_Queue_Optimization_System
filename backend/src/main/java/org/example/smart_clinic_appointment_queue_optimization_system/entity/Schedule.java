@@ -1,5 +1,6 @@
 package org.example.smart_clinic_appointment_queue_optimization_system.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -33,7 +34,7 @@ import org.hibernate.annotations.SQLRestriction;
 
     @ManyToOne
     @JoinColumn(name = "doctor_id")
-    @JsonIgnore
+    @JsonIgnoreProperties({"schedules", "appointments", "password"})
     private Doctor doctor;
 
     @JsonIgnore
