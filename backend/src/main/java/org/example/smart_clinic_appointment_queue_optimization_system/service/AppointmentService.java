@@ -1,6 +1,7 @@
 package org.example.smart_clinic_appointment_queue_optimization_system.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.example.smart_clinic_appointment_queue_optimization_system.dto.AppointmentRequestDto;
 import org.example.smart_clinic_appointment_queue_optimization_system.dto.AppointmentResponseDto;
 import org.example.smart_clinic_appointment_queue_optimization_system.entity.Appointment;
@@ -8,12 +9,16 @@ import org.example.smart_clinic_appointment_queue_optimization_system.entity.Doc
 import org.example.smart_clinic_appointment_queue_optimization_system.entity.Patient;
 import org.example.smart_clinic_appointment_queue_optimization_system.entity.Schedule;
 import org.example.smart_clinic_appointment_queue_optimization_system.repo.*;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AppointmentService {
@@ -235,5 +240,60 @@ public class AppointmentService {
       appointment.setStatus("CANCELLED");
       appointmentRepository.save(appointment);
       return "Appointment #" + appointmentId + " has been cancelled by the doctor.";
+   }
+
+   @Scheduled(cron = "0 * * * * *")
+   @Transactional
+   public void markPastAppointmentsAsExpired() {
+      LocalDate today = LocalDate.now();
+      LocalTime now = LocalTime.now();
+
+      List<Appointment> allBooked = appointmentRepository.findAll().stream()
+              .filter(app -> "BOOKED".equals(app.getStatus()))
+              .filter(app -> {
+                 if (app.getAppointmentDate() == null || app.getSchedule() == null) {
+                    return false;
+                 }
+
+                 LocalDate appDate = app.getAppointmentDate();
+                 LocalTime endTime = app.getSchedule().getEndTime();
+
+                 return appDate.isBefore(today) ||
+                         (appDate.equals(today) && endTime.isBefore(now));
+              })
+              .collect(Collectors.toList());
+
+      if (!allBooked.isEmpty()) {
+         allBooked.forEach(app -> app.setStatus("CANCELLED"));
+         appointmentRepository.saveAll(allBooked);
+         appointmentRepository.flush();
+         log.info(">>> System Cleanup: Updated {} appointments to CANCELLED", allBooked.size());
+      }
+   }
+
+   public List<AppointmentResponseDto> getAllPastAppointments() {
+      List<String> statuses = List.of("COMPLETED", "CANCELLED", "EXPIRED");
+
+      return appointmentRepository.findAll().stream()
+              .filter(app -> app.getStatus() != null && statuses.contains(app.getStatus()))
+              .map(app -> {
+                 String docName = (app.getDoctor() != null) ? app.getDoctor().getName() : "Unknown Doctor";
+                 String patName = (app.getPatient() != null) ? app.getPatient().getName() : "Unknown Patient";
+
+                 return new AppointmentResponseDto(
+                         app.getId(),
+                         docName,
+                         patName,
+                         app.getQueueNumber(),
+                         app.getAppointmentDate(),
+                         app.getStatus(),
+                         app.isPriority()
+                 );
+              })
+              .sorted((a, b) -> {
+                 if (a.getAppointmentDate() == null || b.getAppointmentDate() == null) return 0;
+                 return b.getAppointmentDate().compareTo(a.getAppointmentDate());
+              })
+              .collect(Collectors.toList());
    }
 }

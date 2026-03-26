@@ -254,16 +254,41 @@ function loadQueue(){
                     : "";
 
                 const rowStyle = isEmergency ? `style="background-color: #fff5f5; border-left: 5px solid var(--danger);"` : "";
-                
+
+                let statusBadge = "";
+                let actionButtons = "";
+                const currentStatus = app.status ? app.status.toUpperCase() : "";
+
+                const isTerminal = currentStatus === 'EXPIRED' || currentStatus === 'CANCELLED' || currentStatus === 'COMPLETED';
+
+                if (currentStatus === 'EXPIRED' || currentStatus === 'CANCELLED') {
+                    statusBadge = `<span class="badge" style="background:#eaecf4; color:#a7a9b1;">${currentStatus}</span>`;
+                    actionButtons = `<small style="color:var(--secondary); font-style:italic;">Closed</small>`;
+                } else if (currentStatus === 'COMPLETED') {
+                    statusBadge = `<span class="badge badge-active">COMPLETED</span>`;
+                    actionButtons = `<small style="color:var(--success); font-weight:bold;">✅ Treated</small>`;
+                } else {
+                    const appDate = new Date(app.appointmentDate);
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+
+                    if (appDate < today) {
+                        statusBadge = `<span class="badge" style="background:#eaecf4; color:#a7a9b1;">OVERDUE</span>`;
+                        actionButtons = `<small style="color:var(--danger); font-style:italic;">Time Expired</small>`;
+                    } else {
+                        statusBadge = `<span class="badge badge-booked">${app.status}</span>`;
+                        actionButtons = `
+                <button class="btn btn-complete" onclick="updateStatus(${app.id}, 'complete')">Treat</button>
+                <button class="btn btn-cancel" onclick="updateStatus(${app.id}, 'cancel')">No Show</button>`;
+                    }
+                }
+
                 tbody.append(`<tr ${rowStyle}>
                     <td><b style="color:var(--primary)">#${app.queueNumber}</b></td>
                     <td>${app.patientName} ${priorityLabel}</td>
-                    <td><span class="badge badge-booked">${app.status}</span></td>
-                    <td>
-                        <button class="btn btn-complete" onclick="updateStatus(${app.id}, 'complete')">Treat</button>
-                        <button class="btn btn-cancel" onclick="updateStatus(${app.id}, 'cancel')">No Show</button>
-                    </td>
-                </tr>`);    
+                    <td>${statusBadge}</td>
+                    <td>${actionButtons}</td>
+                </tr>`);
             });
         }
     });

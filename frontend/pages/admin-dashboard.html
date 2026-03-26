@@ -65,6 +65,7 @@
         <a href="#analytics" class="nav-item nav-active">Dashboard & Revenue</a>
         <a href="#doctorSection" class="nav-item">Manage Doctors</a>
         <a href="#scheduleSection" class="nav-item">Manage Schedules</a>
+        <a href="#historySection" class="nav-item">Appointment History</a>
         <div class="nav-item" onclick="logout()" style="margin-top: 50px; color: #ffbbbb;">Logout</div>
     </div>
 
@@ -88,15 +89,17 @@
         <div class="section" id="doctorSection">
             <h3 class="section-title">Doctor Management</h3>
             <input type="hidden" id="editDocId">
-            <div class="form-grid">
-                <input type="text" id="docUser" placeholder="Username (New Doctors Only)">
-                <input type="password" id="docPass" placeholder="Password">
-                <input type="text" id="docName" placeholder="Full Name">
-                <input type="text" id="docSpec" placeholder="Specialization">
-                <input type="email" id="docEmail" placeholder="Email">
-                <input type="text" id="docPhone" placeholder="Phone">
-                <input type="number" id="docLimit" placeholder="Daily Patient Limit">
-            </div>
+            <form id="docForm" onsubmit="return false;">
+                <div class="form-grid">
+                    <input type="text" id="docUser" placeholder="Username (New Doctors Only)">
+                    <input type="password" id="docPass" placeholder="Password">
+                    <input type="text" id="docName" placeholder="Full Name">
+                    <input type="text" id="docSpec" placeholder="Specialization">
+                    <input type="email" id="docEmail" placeholder="Email">
+                    <input type="text" id="docPhone" placeholder="Phone">
+                    <input type="number" id="docLimit" placeholder="Daily Patient Limit">
+                </div>
+            </form>
             <button class="btn btn-save" id="btnSaveDoc" onclick="saveDoctor()">Add Doctor</button>
             <button class="btn btn-update" id="btnUpdateDoc" onclick="updateDoctor()">Update Doctor Details</button>
             <button class="btn btn-cancel" onclick="resetDocForm()">Clear</button>
@@ -146,6 +149,24 @@
         </div>
     </div>
 
+    <div class="section" id="historySection" style="display:none;">
+        <h3 class="section-title">Completed & Cancelled Appointments</h3>
+        <table>
+            <thead>
+            <tr>
+                <th>Date</th>
+                <th>Patient</th>
+                <th>Doctor</th>
+                <th>Queue #</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody id="historyTableBody">
+            <tr><td colspan="5" style="text-align:center;">Loading history...</td></tr>
+            </tbody>
+        </table>
+    </div>
+
     <div id="doctorModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="$('#doctorModal').hide()">&times;</span>
@@ -173,6 +194,24 @@
 
         $(document).ready(function() {
             if (!TOKEN || localStorage.getItem('role') !== 'ADMIN') window.location.href = '../signIn.html';
+
+            $(".nav-item").click(function(e) {
+                if ($(this).attr("onclick")) return;
+
+                e.preventDefault();
+
+                $(".nav-item").removeClass("nav-active");
+                $(this).addClass("nav-active");
+
+                $("#analytics, #doctorSection, #scheduleSection, #historySection").hide();
+
+                const target = $(this).attr("href");
+                $(target).fadeIn();
+
+                if(target === "#historySection") {
+                    loadAppointmentHistory();
+                }
+            });
             loadAll();
         });
 
@@ -558,7 +597,41 @@
                 alert("Failed to fetch doctor insights.");
             });
          }
-        
+
+        function loadAppointmentHistory() {
+            $.ajax({
+                url: API + "/admin/appointments/history",
+                method: 'GET',
+                headers: HEADERS,
+                success: function(res) {
+                    const tbody = $("#historyTableBody").empty();
+                    if (!res.data || res.data.length === 0) {
+                        tbody.append('<tr><td colspan="5" style="text-align:center;">No history records found.</td></tr>');
+                        return;
+                    }
+
+                    res.data.forEach(app => {
+
+                        let badgeStyle = "background: #eee; color: #333;"; // Default
+                        if (app.status === 'COMPLETED') badgeStyle = "background: var(--success); color: white;";
+                        if (app.status === 'CANCELLED') badgeStyle = "background: var(--danger); color: white;";
+                        if (app.status === 'EXPIRED') badgeStyle = "background: var(--secondary); color: white;";
+
+                        tbody.append(`<tr>
+                    <td>${app.appointmentDate}</td>
+                    <td>${app.patientName}</td>
+                    <td>Dr. ${app.doctorName}</td>
+                    <td>#${app.queueNumber}</td>
+                    <td><span class="badge" style="${badgeStyle} padding: 4px 8px; border-radius: 4px; font-size: 11px;">${app.status}</span></td>
+                </tr>`);
+                    });
+                },
+                error: (err) => {
+                    console.error(err);
+                    alert("Failed to load history.");
+                }
+            });
+        }
     </script>
 </body>
 </html>

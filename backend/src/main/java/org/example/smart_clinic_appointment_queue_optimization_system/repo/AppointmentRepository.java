@@ -4,10 +4,12 @@ import org.example.smart_clinic_appointment_queue_optimization_system.entity.App
 import org.example.smart_clinic_appointment_queue_optimization_system.entity.Doctor;
 import org.example.smart_clinic_appointment_queue_optimization_system.entity.Schedule;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Long> {
@@ -58,5 +60,13 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     List<Appointment> findAllByDoctorAndAppointmentDateAndStatusOrderByIsPriorityDescQueueNumberAsc(
             Doctor doctor, LocalDate date, String status);
 
+    List<Appointment> findAllByAppointmentDateBeforeAndStatus(LocalDate date, String status);
 
+    @Modifying
+    @Query("UPDATE Appointment a SET a.status = 'CANCELLED' " +
+            "WHERE a.status = 'BOOKED' " +
+            "AND (a.appointmentDate < :today OR (a.appointmentDate = :today AND a.schedule.endTime < :now))")
+    int markExpiredAsCancelled(@Param("today") LocalDate today, @Param("now") LocalTime now);
+
+    List<Appointment> findAllByStatusInOrderByAppointmentDateDesc(List<String> statuses);
 }

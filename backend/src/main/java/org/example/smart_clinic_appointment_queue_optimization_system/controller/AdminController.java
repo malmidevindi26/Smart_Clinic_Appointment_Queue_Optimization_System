@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.example.smart_clinic_appointment_queue_optimization_system.dto.ApiResponse;
 import org.example.smart_clinic_appointment_queue_optimization_system.dto.RegisterDto;
 import org.example.smart_clinic_appointment_queue_optimization_system.dto.ScheduleRequestDto;
+import org.example.smart_clinic_appointment_queue_optimization_system.service.AppointmentService;
 import org.example.smart_clinic_appointment_queue_optimization_system.service.DoctorService;
 import org.example.smart_clinic_appointment_queue_optimization_system.service.ScheduleService;
 import org.example.smart_clinic_appointment_queue_optimization_system.service.UserService;
@@ -20,6 +21,7 @@ public class AdminController {
     private final UserService userService;
     private final DoctorService doctorService;
     private final ScheduleService scheduleService;
+    private final AppointmentService appointmentService;
 
     @PostMapping("/add-doctor")
     public ResponseEntity<ApiResponse> addDoctor(@RequestBody RegisterDto dto) {
@@ -61,5 +63,11 @@ public class AdminController {
         return ResponseEntity.ok(
                 new ApiResponse(200, "Success", scheduleService.getAllSchedules())
         );
+    }
+
+    @GetMapping("/appointments/history")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse> getAppointmentHistory() {
+        return ResponseEntity.ok(new ApiResponse(200, "Success", appointmentService.getAllPastAppointments()));
     }
 }
