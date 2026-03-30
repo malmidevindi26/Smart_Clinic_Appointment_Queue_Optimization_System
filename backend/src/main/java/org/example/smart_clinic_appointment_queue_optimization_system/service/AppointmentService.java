@@ -29,6 +29,7 @@ public class AppointmentService {
    private final ScheduleRepository scheduleRepository;
    private final PaymentService paymentService;
    private final PaymentRepository paymentRepository;
+   private final EmailService emailService;
 
    @Transactional
    public AppointmentResponseDto bookAppointment(AppointmentRequestDto request) {
@@ -71,7 +72,6 @@ public class AppointmentService {
          throw new RuntimeException("Maximum patient limit (" + schedule.getMaxSlots() + ") reached for this schedule.");
       }
 
-      // Assign the next available queue number
       int nextQueueNumber = activeAppointments + 1;
 
       Appointment appointment = Appointment.builder()
@@ -85,6 +85,19 @@ public class AppointmentService {
               .build();
 
       Appointment savedAppointment = appointmentRepository.save(appointment);
+
+      if (savedAppointment.isPriority()){
+         try {
+            emailService.sendEmergencyAlert(
+                    doctor.getEmail(),
+                    doctor.getName(),
+                    patient.getName(),
+                    savedAppointment.getQueueNumber()
+            );
+         }catch (Exception e){
+            log.error("Failed to send emergency alert email to Dr. ", doctor.getName(), e);
+         }
+      }
 
       double doctorFee = 2500.0;
       paymentService.processAppointmentPayment(savedAppointment, doctorFee, request.getPaymentMethod(), request.getTransactionId());
