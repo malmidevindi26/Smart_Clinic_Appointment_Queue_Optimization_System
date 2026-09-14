@@ -66,6 +66,7 @@
         <a href="#doctorSection" class="nav-item">Manage Doctors</a>
         <a href="#scheduleSection" class="nav-item">Manage Schedules</a>
         <a href="#historySection" class="nav-item">Appointment History</a>
+        <a href="#forecastSection" class="nav-item">Doctor Forecast</a>
         <div class="nav-item" onclick="logout()" style="margin-top: 50px; color: #ffbbbb;">Logout</div>
     </div>
 
@@ -167,6 +168,48 @@
         </table>
     </div>
 
+    <div class="section" id="forecastSection" style="display:none;">
+        <h3 class="section-title">Doctor Appointment Demand Forecast</h3>
+
+        <div class="form-grid" style="grid-template-columns: 200px 200px 1fr; align-items:end;">
+            <div>
+                <label style="font-size:12px; color:var(--secondary);">Lookback period (days)</label>
+                <select id="forecastLookback">
+                    <option value="14">Last 14 days</option>
+                    <option value="30" selected>Last 30 days</option>
+                    <option value="60">Last 60 days</option>
+                    <option value="90">Last 90 days</option>
+                </select>
+            </div>
+            <button class="btn btn-save" onclick="loadForecastReport()">Generate Forecast</button>
+            <button class="btn btn-update" style="display:inline-block; background:var(--dark);" onclick="downloadForecastPdf()">Download Report (PDF)</button>
+        </div>
+
+        <div id="forecastReportArea" style="margin-top:20px;">
+            <div id="forecastSummaryBox" class="insight-card" style="margin-bottom:20px; display:none;">
+                <h4 style="color:var(--primary); margin-top:0;">Report Summary</h4>
+                <p id="forecastSummaryText"></p>
+                <div style="font-size:12px; color:var(--secondary);" id="forecastMeta"></div>
+            </div>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>Doctor</th>
+                    <th>Specialization</th>
+                    <th>Historical Avg / day</th>
+                    <th>Predicted Next Period</th>
+                    <th>Trend</th>
+                    <th>Change %</th>
+                </tr>
+                </thead>
+                <tbody id="forecastTableBody">
+                <tr><td colspan="6" style="text-align:center;">Click "Generate Forecast" to load data.</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <div id="doctorModal" class="modal">
         <div class="modal-content">
             <span class="close-modal" onclick="$('#doctorModal').hide()">&times;</span>
@@ -203,13 +246,16 @@
                 $(".nav-item").removeClass("nav-active");
                 $(this).addClass("nav-active");
 
-                $("#analytics, #doctorSection, #scheduleSection, #historySection").hide();
+                $("#analytics, #doctorSection, #scheduleSection, #historySection, #forecastSection").hide();
 
                 const target = $(this).attr("href");
                 $(target).fadeIn();
 
                 if(target === "#historySection") {
                     loadAppointmentHistory();
+                }
+                if(target === "#forecastSection") {
+                    loadForecastReport();
                 }
             });
             loadAll();
@@ -631,6 +677,81 @@
                     alert("Failed to load history.");
                 }
             });
+        }
+
+        let lastForecastReport = null;
+
+        function loadForecastReport() {
+            const days = $("#forecastLookback").val();
+            $("#forecastTableBody").html('<tr><td colspan="6" style="text-align:center;">Loading forecast...</td></tr>');
+
+            $.ajax({
+                url: API + "/forecast/report?lookbackDays=" + days,
+                method: "GET",
+                headers: HEADERS,
+                success: function (res) {
+                    lastForecastReport = res.data;
+                    renderForecastReport(res.data);
+                },
+                error: function () {
+                    $("#forecastTableBody").html('<tr><td colspan="6" style="text-align:center;">Could not load forecast.</td></tr>');
+                }
+            });
+        }
+
+        function renderForecastReport(report) {
+            $("#forecastSummaryText").text(report.summary);
+            $("#forecastMeta").text(
+                "Generated: " + new Date(report.generatedAt).toLocaleString() +
+                " | Lookback: " + report.lookbackDays + " days" +
+                " | Doctors analyzed: " + report.totalDoctorsAnalyzed
+            );
+            $("#forecastSummaryBox").show();
+
+            let rows = "";
+            if (!report.forecasts || report.forecasts.length === 0) {
+                rows = '<tr><td colspan="6" style="text-align:center;">No data available for this period.</td></tr>';
+            } else {
+                report.forecasts.forEach(function (d) {
+                    const trendColor = d.trend === "INCREASING" ? "var(--success)"
+                        : d.trend === "DECREASING" ? "var(--danger)"
+                            : "var(--secondary)";
+                    rows += "<tr>" +
+                        "<td>" + d.doctorName + "</td>" +
+                        "<td>" + (d.specialization || "-") + "</td>" +
+                        "<td>" + d.historicalAverage.toFixed(1) + "</td>" +
+                        "<td><b>" + d.predictedAppointments.toFixed(1) + "</b></td>" +
+                        "<td style='color:" + trendColor + "; font-weight:bold;'>" + d.trend + "</td>" +
+                        "<td>" + (d.trendPercentage > 0 ? "+" : "") + d.trendPercentage.toFixed(1) + "%</td>" +
+                        "</tr>";
+                });
+            }
+            $("#forecastTableBody").html(rows);
+        }
+
+        function downloadForecastPdf() {
+            if (!lastForecastReport) {
+                alert("Generate a forecast first.");
+                return;
+            }
+            const printContents = document.getElementById("forecastReportArea").innerHTML;
+            const win = window.open("", "_blank");
+            win.document.write(
+                "<html><head><title>Doctor Forecast Report</title>" +
+                "<style>" +
+                "body{font-family:Segoe UI,Arial,sans-serif;padding:30px;color:#333;}" +
+                "table{width:100%;border-collapse:collapse;margin-top:15px;}" +
+                "th{background:#f8f9fc;text-align:left;padding:10px;border-bottom:2px solid #ddd;}" +
+                "td{padding:10px;border-bottom:1px solid #eee;font-size:13px;}" +
+                "h1{font-size:20px;}" +
+                "</style></head><body>" +
+                "<h1>Smart Clinic - Doctor Appointment Demand Forecast Report</h1>" +
+                printContents +
+                "</body></html>"
+            );
+            win.document.close();
+            win.focus();
+            setTimeout(() => { win.print(); }, 300);
         }
     </script>
 </body>

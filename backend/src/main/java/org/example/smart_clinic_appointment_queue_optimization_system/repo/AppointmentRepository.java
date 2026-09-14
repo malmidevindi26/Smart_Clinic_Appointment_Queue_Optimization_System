@@ -69,4 +69,11 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Long> 
     int markExpiredAsCancelled(@Param("today") LocalDate today, @Param("now") LocalTime now);
 
     List<Appointment> findAllByStatusInOrderByAppointmentDateDesc(List<String> statuses);
+
+    @Query("SELECT a.doctor.id, a.appointmentDate, COUNT(a) " +
+            "FROM Appointment a " +
+            "WHERE a.status != 'CANCELLED' AND a.appointmentDate >= :fromDate " +
+            "GROUP BY a.doctor.id, a.appointmentDate " +
+            "ORDER BY a.doctor.id, a.appointmentDate")
+    List<Object[]> findDailyAppointmentCountsPerDoctor(@Param("fromDate") LocalDate fromDate);
 }
